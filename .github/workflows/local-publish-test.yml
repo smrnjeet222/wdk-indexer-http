@@ -1,14 +1,9 @@
 name: local-publish-test
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        type: boolean
-        default: true
-        required: false
 jobs:
-  call:
-    uses: ./.github/workflows/publish.yml
-    with:
-      dry_run: ${{ inputs.dry_run }}
-    secrets: inherit
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holepunchto/actions/node-base@v1
+      - run: npm publish --dry-run --ignore-scripts
