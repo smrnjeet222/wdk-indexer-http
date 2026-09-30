@@ -15,10 +15,12 @@
 
 const test = require('brittle')
 const { WdkIndexerClient } = require('../lib/client.js')
-const { WdkIndexerApiError, WdkIndexerTimeoutError } = require('../lib/errors.js')
+const { WdkIndexerApiError, WdkIndexerTimeoutError, WdkIndexerValidationError } = require('../lib/errors.js')
 
 const KEY = 'test-key'
 const BASE = 'https://wdk-api.tether.su/api/v1'
+const ADDR = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+const TX = '0x' + 'ab'.repeat(32)
 
 // Minimal stand-in for a fetch Response.
 function reply (status, body, statusText = '') {
@@ -48,6 +50,53 @@ async function rejects (t, promise, ErrorClass, pattern) {
   }
   t.fail('should reject')
   return {}
+}
+
+const GET_HEADERS = { Accept: 'application/json', 'X-API-KEY': KEY }
+const BODY_HEADERS = { ...GET_HEADERS, 'Content-Type': 'application/json' }
+
+// [method, args, HTTP method, URL after /api/v1, request body]
+const cases = [
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers'],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 10, fromTs: 0, toTs: 1700000000 }], 'GET',
+    '/ethereum/usdt/' + ADDR + '/token-transfers?limit=10&fromTs=0&toTs=1700000000'],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { toTs: 5, limit: undefined }], 'GET',
+    '/ethereum/usdt/' + ADDR + '/token-transfers?toTs=5'],
+  ['getTokenBalance', ['ton', 'usdt', 'EQ/a+b'], 'GET', '/ton/usdt/EQ%2Fa%2Bb/token-balances'],
+  ['getTransactionTransfers', ['ethereum', 'usdt', TX], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + TX],
+  // Path segment encoding for every parameter.
+  ['getTransactionTransfers', ['eth/x', 'us dt', '0x#1'], 'GET', '/blockchains/eth%2Fx/us%20dt/token-transfers/0x%231'],
+  ['getTokenTransfers', ['a?b', 'c&d', 'e f'], 'GET', '/a%3Fb/c%26d/e%20f/token-transfers'],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { toTs: 9, limit: 5, offset: 3 }], 'GET',
+    '/ethereum/usdt/' + ADDR + '/token-transfers?limit=5&toTs=9'],
+  // Boundary values are accepted and sent.
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1 }], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1'],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1000, fromTs: 0 }], 'GET',
+    '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1000&fromTs=0'],
+  ['getTransactionTransfers', ['ethereum', 'usdt', 'f'.repeat(255)], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + 'f'.repeat(255)]
+]
+
+for (const [name, args, method, path, body] of cases) {
+  test(name + ' sends ' + method + ' ' + path, async (t) => {
+    const result = { name, items: [1, 2, 3] }
+    const fetch = mockFetch(() => reply(200, result))
+    const client = new WdkIndexerClient({ apiKey: KEY, fetch })
+
+    t.alike(await client[name](...args), result, 'returns the parsed body unchanged')
+    t.is(fetch.calls.length, 1)
+    const call = fetch.calls[0]
+    t.is(call.method, method)
+    t.is(call.url, BASE + path)
+    t.alike(call.headers, body === undefined ? GET_HEADERS : BODY_HEADERS)
+    t.is(call.body, body === undefined ? undefined : JSON.stringify(body))
+  })
+
+  test(name + ' requires an API key', async (t) => {
+    const fetch = mockFetch()
+    await rejects(t, new WdkIndexerClient({ fetch })[name](...args), WdkIndexerValidationError, /^API key is required$/)
+    await rejects(t, new WdkIndexerClient({ apiKey: '', fetch })[name](...args), WdkIndexerValidationError, /^API key is required$/)
+    t.is(fetch.calls.length, 0, 'fetch not called')
+  })
 }
 
 test('health and getChains need no key and never send X-API-KEY', async (t) => {
@@ -106,6 +155,15 @@ test('getChains throws WdkIndexerApiError on 503', async (t) => {
   t.is(err.status, 503)
 })
 
+test('API errors surface status, errorType and message', async (t) => {
+  const body = { error: 'Bad Request', message: 'Unsupported blockchain: plasma' }
+  const client = new WdkIndexerClient({ apiKey: KEY, fetch: mockFetch(() => reply(400, body, 'Bad Request')) })
+  const err = await rejects(t, client.getTokenBalance('plasma', 'usdt', ADDR), WdkIndexerApiError, /^Unsupported blockchain: plasma$/)
+  t.is(err.status, 400)
+  t.is(err.errorType, 'Bad Request')
+  t.alike(err.body, body)
+})
+
 test('a user-supplied fetch overrides #fetch', async (t) => {
   const original = globalThis.fetch
   let globalCalls = 0
@@ -157,3 +215,34 @@ test('timeout defaults to 30000ms', async (t) => {
   }
   t.ok(delays.includes(30000), 'timer armed with 30000ms')
 })
+
+// [method, args, message pattern]
+const invalid = [
+  ['getTokenTransfers', ['', 'usdt', ADDR], /^blockchain must be a non-empty string$/],
+  ['getTokenTransfers', ['ethereum', 1, ADDR], /^token must be a non-empty string$/],
+  ['getTokenTransfers', ['ethereum', 'usdt', null], /^address must be a non-empty string$/],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, 'x'], /^options must be an object$/],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 0 }], /^options\.limit must be an integer from 1 to 1000$/],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1001 }], /^options\.limit/],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1.5 }], /^options\.limit/],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { fromTs: -1 }], /^options\.fromTs must be an integer >= 0$/],
+  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { toTs: '5' }], /^options\.toTs/],
+  ['getTokenBalance', ['ethereum', '', ADDR], /^token must be a non-empty string$/],
+  ['getTokenBalance', ['ethereum', 'usdt'], /^address must be a non-empty string$/],
+  ['getTransactionTransfers', ['ethereum', 'usdt', ''], /^txHash must be a non-empty string$/],
+  ['getTransactionTransfers', ['ethereum', 'usdt', 'a'.repeat(256)], /^txHash must be at most 255 characters$/],
+  ['getTransactionTransfers', [undefined, 'usdt', TX], /^blockchain must be a non-empty string$/],
+  ['getTokenBalance', ['..', 'usdt', ADDR], /^blockchain must not be/],
+  ['getTokenBalance', ['ethereum', '.', ADDR], /^token must not be/],
+  ['getTokenTransfers', ['ethereum', 'usdt', '..'], /^address must not be/],
+  ['getTransactionTransfers', ['ethereum', 'usdt', '..'], /^txHash must not be/]
+]
+
+for (const [name, args, pattern] of invalid) {
+  test(name + ' rejects invalid input: ' + pattern.source, async (t) => {
+    const fetch = mockFetch()
+    const client = new WdkIndexerClient({ apiKey: KEY, fetch })
+    await rejects(t, client[name](...args), WdkIndexerValidationError, pattern)
+    t.is(fetch.calls.length, 0, 'fetch not called')
+  })
+}
