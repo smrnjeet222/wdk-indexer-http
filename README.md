@@ -330,6 +330,20 @@ WDK_INDEXER_BASE_URL=https://... npm run test:integration          # target anot
 npm run test:integration:bare                                      # the same live tests on Bare
 ```
 
+The integration tests read these environment variables:
+
+| Variable | Required | Description |
+|---|---|---|
+| `WDK_INDEXER_API_KEY` | For authenticated tests | API key sent as `X-API-KEY`. Without it, only `health()` and `getChains()` run and the rest are skipped. |
+| `WDK_INDEXER_WALLET_TESTS` | No | Set to `1` to also run the wallet lifecycle test. It registers, updates and deletes a wallet on your account, and cleans up after itself. |
+| `WDK_INDEXER_BASE_URL` | No | Target another deployment instead of `https://wdk-api.tether.su`. |
+
+The tests don't load a `.env` file themselves. To keep the values in one, export it into the shell first:
+
+```bash
+set -a && . ./.env && set +a && npm run test:integration
+```
+
 `examples/usage.js` runs through every read method:
 
 ```bash
