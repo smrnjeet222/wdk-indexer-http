@@ -52,3 +52,34 @@ jobs:
         with:
           node-version: 22
       - run: npm run test:types
+
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm i -g bare
+      - name: Install the packed tarball into a clean project
+        run: |
+          mkdir "$RUNNER_TEMP/pkg"
+          npm pack --pack-destination "$RUNNER_TEMP/pkg"
+          cp test/package/smoke.js "$RUNNER_TEMP/pkg/"
+          cp -r test/types "$RUNNER_TEMP/pkg/types"
+          cd "$RUNNER_TEMP/pkg"
+          npm init -y > /dev/null
+          npm i --no-audit --no-fund ./tetherto-wdk-indexer-http-*.tgz
+      - name: Smoke test on Node and Bare
+        working-directory: ${{ runner.temp }}/pkg
+        run: |
+          node smoke.js
+          bare smoke.js
+      - name: Type-check against the installed package
+        working-directory: ${{ runner.temp }}/pkg
+        run: |
+          npx -y -p typescript@5 tsc -p types
+          npx -y -p typescript@5 tsc -p types/tsconfig.bundler.json
