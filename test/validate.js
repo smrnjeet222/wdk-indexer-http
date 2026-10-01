@@ -56,6 +56,13 @@ test('assertSegment rejects dot segments', (t) => {
   throws(t, () => v.assertSegment('x'.repeat(256), 'txHash', 255), /^txHash must be at most 255 characters$/)
 })
 
+test('assertAddressPath checks blockchain, token and address', (t) => {
+  t.execution(() => v.assertAddressPath('ethereum', 'usdt', '0xabc'))
+  throws(t, () => v.assertAddressPath('', 'usdt', '0xabc'), /^blockchain must be a non-empty string$/)
+  throws(t, () => v.assertAddressPath('ethereum', '.', '0xabc'), /^token must not be/)
+  throws(t, () => v.assertAddressPath('ethereum', 'usdt', null), /^address must be a non-empty string$/)
+})
+
 test('assertString does not check chain or token lists', (t) => {
   t.execution(() => v.assertString('plasma', 'blockchain'))
   t.execution(() => v.assertString('dai', 'token'))
