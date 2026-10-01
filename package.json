@@ -29,8 +29,8 @@
   ],
   "scripts": {
     "lint": "standard",
-    "test": "brittle test/*.js",
-    "test:bare": "brittle-bare test/*.js"
+    "test": "brittle test/*.js test/*.mjs",
+    "test:bare": "brittle-bare test/*.js test/*.mjs"
   },
   "keywords": [
     "tether",
