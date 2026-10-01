@@ -55,6 +55,13 @@ async function rejects (t, promise, ErrorClass, pattern) {
 const GET_HEADERS = { Accept: 'application/json', 'X-API-KEY': KEY }
 const BODY_HEADERS = { ...GET_HEADERS, 'Content-Type': 'application/json' }
 
+const batch = [
+  { blockchain: 'ethereum', token: 'usdt', address: ADDR, limit: 5 },
+  { blockchain: 'tron', token: 'usdt', address: 'TXYZ' }
+]
+const tenItems = Array.from({ length: 10 }, (_, i) => ({ blockchain: 'ethereum', token: 'usdt', address: ADDR + i }))
+const looseBatch = [{ blockchain: 'ethereum', token: 'usdt', address: ADDR, limit: 5000, fromTs: -1, extra: true }]
+
 // [method, args, HTTP method, URL after /api/v1, request body]
 const cases = [
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers'],
@@ -64,6 +71,8 @@ const cases = [
     '/ethereum/usdt/' + ADDR + '/token-transfers?toTs=5'],
   ['getTokenBalance', ['ton', 'usdt', 'EQ/a+b'], 'GET', '/ton/usdt/EQ%2Fa%2Bb/token-balances'],
   ['getTransactionTransfers', ['ethereum', 'usdt', TX], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + TX],
+  ['getBatchTokenTransfers', [batch], 'POST', '/batch/token-transfers', batch],
+  ['getBatchTokenBalances', [batch], 'POST', '/batch/token-balances', batch],
   // Path segment encoding for every parameter.
   ['getTransactionTransfers', ['eth/x', 'us dt', '0x#1'], 'GET', '/blockchains/eth%2Fx/us%20dt/token-transfers/0x%231'],
   ['getTokenTransfers', ['a?b', 'c&d', 'e f'], 'GET', '/a%3Fb/c%26d/e%20f/token-transfers'],
@@ -73,7 +82,10 @@ const cases = [
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1 }], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1'],
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1000, fromTs: 0 }], 'GET',
     '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1000&fromTs=0'],
-  ['getTransactionTransfers', ['ethereum', 'usdt', 'f'.repeat(255)], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + 'f'.repeat(255)]
+  ['getTransactionTransfers', ['ethereum', 'usdt', 'f'.repeat(255)], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + 'f'.repeat(255)],
+  ['getBatchTokenBalances', [tenItems], 'POST', '/batch/token-balances', tenItems],
+  // Shape-only validation: extra keys and missing `type` are left for the server.
+  ['getBatchTokenTransfers', [looseBatch], 'POST', '/batch/token-transfers', looseBatch]
 ]
 
 for (const [name, args, method, path, body] of cases) {
@@ -164,6 +176,14 @@ test('API errors surface status, errorType and message', async (t) => {
   t.alike(err.body, body)
 })
 
+test('unknown chains and tokens are sent to the server', async (t) => {
+  const fetch = mockFetch()
+  const client = new WdkIndexerClient({ apiKey: KEY, fetch })
+  await client.getTokenBalance('plasma', 'doge', ADDR)
+  await client.getBatchTokenBalances([{ blockchain: 'plasma', token: 'doge', address: ADDR }])
+  t.is(fetch.calls.length, 2)
+})
+
 test('a user-supplied fetch overrides #fetch', async (t) => {
   const original = globalThis.fetch
   let globalCalls = 0
@@ -216,6 +236,8 @@ test('timeout defaults to 30000ms', async (t) => {
   t.ok(delays.includes(30000), 'timer armed with 30000ms')
 })
 
+const tooMany = Array.from({ length: 11 }, () => ({ blockchain: 'ethereum', token: 'usdt', address: ADDR }))
+
 // [method, args, message pattern]
 const invalid = [
   ['getTokenTransfers', ['', 'usdt', ADDR], /^blockchain must be a non-empty string$/],
@@ -232,6 +254,12 @@ const invalid = [
   ['getTransactionTransfers', ['ethereum', 'usdt', ''], /^txHash must be a non-empty string$/],
   ['getTransactionTransfers', ['ethereum', 'usdt', 'a'.repeat(256)], /^txHash must be at most 255 characters$/],
   ['getTransactionTransfers', [undefined, 'usdt', TX], /^blockchain must be a non-empty string$/],
+  ['getBatchTokenTransfers', [[]], /^requests must be an array of 1 to 10 items$/],
+  ['getBatchTokenTransfers', [tooMany], /^requests must be an array of 1 to 10 items$/],
+  ['getBatchTokenTransfers', [{}], /^requests must be an array/],
+  ['getBatchTokenTransfers', [[null]], /^requests\[0\] must be an object$/],
+  ['getBatchTokenBalances', [[batch[0], { blockchain: 'ethereum', address: ADDR }]], /^requests\[1\]\.token must be a non-empty string$/],
+  ['getBatchTokenBalances', [undefined], /^requests must be an array/],
   ['getTokenBalance', ['..', 'usdt', ADDR], /^blockchain must not be/],
   ['getTokenBalance', ['ethereum', '.', ADDR], /^token must not be/],
   ['getTokenTransfers', ['ethereum', 'usdt', '..'], /^address must not be/],
