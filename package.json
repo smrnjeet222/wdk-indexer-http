@@ -3,15 +3,28 @@
   "version": "1.0.0-beta.1",
   "description": "HTTP client for the Tether WDK Indexer API - Access blockchain token transfers and balances",
   "main": "index.js",
+  "types": "index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.mjs",
-      "require": "./index.js",
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./index.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      },
       "default": "./index.js"
     },
     "./bare": {
-      "import": "./index.mjs",
-      "require": "./index.js",
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./index.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      },
       "default": "./index.js"
     },
     "./package.json": "./package.json"
@@ -25,12 +38,15 @@
   "files": [
     "index.js",
     "index.mjs",
+    "index.d.ts",
+    "index.d.mts",
     "lib"
   ],
   "scripts": {
     "lint": "standard",
     "test": "brittle test/*.js test/*.mjs",
-    "test:bare": "brittle-bare test/*.js test/*.mjs"
+    "test:bare": "brittle-bare test/*.js test/*.mjs",
+    "test:types": "npx -y -p typescript@5 tsc -p test/types && npx -y -p typescript@5 tsc -p test/types/tsconfig.bundler.json"
   },
   "keywords": [
     "tether",
