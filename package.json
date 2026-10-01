@@ -40,7 +40,8 @@
     "index.mjs",
     "index.d.ts",
     "index.d.mts",
-    "lib"
+    "lib",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "lint": "standard",
