@@ -83,3 +83,18 @@ jobs:
         run: |
           npx -y -p typescript@5 tsc -p types
           npx -y -p typescript@5 tsc -p types/tsconfig.bundler.json
+
+  integration:
+    runs-on: ubuntu-latest
+    env:
+      WDK_INDEXER_API_KEY: ${{ secrets.WDK_INDEXER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm i -g bare
+      - run: npm run test:integration
+      - run: npm run test:integration:bare
