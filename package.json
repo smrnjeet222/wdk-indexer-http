@@ -46,6 +46,8 @@
     "lint": "standard",
     "test": "brittle test/*.js test/*.mjs",
     "test:bare": "brittle-bare test/*.js test/*.mjs",
+    "test:integration": "brittle test/integration/*.js",
+    "test:integration:bare": "brittle-bare test/integration/*.js",
     "test:types": "npx -y -p typescript@5 tsc -p test/types && npx -y -p typescript@5 tsc -p test/types/tsconfig.bundler.json"
   },
   "keywords": [
