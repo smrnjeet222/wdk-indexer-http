@@ -1,5 +1,4 @@
 // Types for @tetherto/wdk-indexer-http, derived from the WDK Indexer OpenAPI spec (v1).
-// This file types the CommonJS entry; index.d.mts adds the ESM default export.
 // Response fields are typed as the server always sends them; the spec itself
 // marks few of them as required.
 

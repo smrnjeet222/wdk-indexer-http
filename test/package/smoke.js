@@ -17,12 +17,12 @@ async function main () {
 
   assert(typeof cjs.WdkIndexerClient === 'function', 'require() exports WdkIndexerClient')
   assert(bare.WdkIndexerClient === cjs.WdkIndexerClient, './bare is an alias of the main entry')
-  assert(esm.default === cjs.WdkIndexerClient, 'ESM default export is WdkIndexerClient')
+  assert(esm.WdkIndexerClient === cjs.WdkIndexerClient, 'ESM named export is WdkIndexerClient')
   assert(esm.WdkIndexerApiError === cjs.WdkIndexerApiError, 'ESM and CJS share error classes')
-  assert(esmBare.default === cjs.WdkIndexerClient, 'ESM ./bare default export is WdkIndexerClient')
-  assert(cjs.default === undefined, 'CJS entry has no default property')
+  assert(esmBare.WdkIndexerClient === cjs.WdkIndexerClient, 'ESM ./bare named export is WdkIndexerClient')
+  assert(esm.default === cjs, 'ESM default import is the exports object')
 
-  const { chains } = await new esm.default({ timeout: 20000 }).getChains() // eslint-disable-line new-cap
+  const { chains } = await new esm.WdkIndexerClient({ timeout: 20000 }).getChains()
   assert(Array.isArray(chains) && chains.length > 0, 'getChains() returns chains through the default fetch')
   console.log('smoke ok:', chains.length, 'chains')
 }

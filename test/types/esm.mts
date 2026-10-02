@@ -1,6 +1,6 @@
 // Type test for the ESM entry, checked by `npm run test:types` (never executed).
-import WdkIndexerClient, {
-  WdkIndexerClient as NamedClient,
+import {
+  WdkIndexerClient,
   WdkIndexerApiError,
   WdkIndexerError,
   isApiError,
@@ -9,15 +9,14 @@ import WdkIndexerClient, {
   type TokenBalanceResponse,
   type WalletTransfersResponse
 } from '@tetherto/wdk-indexer-http'
-import BareClient from '@tetherto/wdk-indexer-http/bare'
+import { WdkIndexerClient as BareClient } from '@tetherto/wdk-indexer-http/bare'
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false
 function assertType<T extends true> (): T | void {}
 
-const client: NamedClient = new WdkIndexerClient({ apiKey: 'key', timeout: 1000 })
+const client: WdkIndexerClient = new WdkIndexerClient({ apiKey: 'key', timeout: 1000 })
 const bare = new BareClient()
-assertType<Equal<typeof WdkIndexerClient, typeof NamedClient>>()
-assertType<Equal<typeof BareClient, typeof NamedClient>>()
+assertType<Equal<typeof BareClient, typeof WdkIndexerClient>>()
 assertType<Equal<typeof BATCH_LIMIT, 10>>()
 
 export async function check (): Promise<void> {

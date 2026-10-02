@@ -45,8 +45,6 @@ client.getTokenTransfers('tron', 'usdt', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', {
   .then(({ transfers }) => console.log(`${transfers.length} transfers`))
 ```
 
-The ESM default export is the client class, so `import WdkIndexerClient from '@tetherto/wdk-indexer-http'` works too.
-
 ## Bare runtime
 
 Use the same import on Bare. The package's `#fetch` import map picks `bare-fetch` on Bare and the global `fetch` on Node, so you don't need to configure anything:
@@ -302,10 +300,10 @@ try {
 
 ## TypeScript
 
-Type definitions ship in `index.d.ts` (CommonJS entry) and `index.d.mts` (ESM entry, which adds the default export), so they resolve correctly under `moduleResolution` `node16`/`nodenext`, `bundler` and `node10`. They include the client, config, options, request items, response bodies (`HealthResponse`, `ChainsResponse`, `TokenTransfersResponse`, `TokenBalanceResponse`, `Wallet`, `WalletTransfersResponse` and others), `ApiError`, and the error classes. `isApiError()` is a type guard, so it narrows the item types of batch results. The `Blockchain` and `Token` types suggest the known names but accept any string.
+Type definitions ship in `index.d.ts` and resolve correctly under `moduleResolution` `node16`/`nodenext`, `bundler` and `node10`. They include the client, config, options, request items, response bodies (`HealthResponse`, `ChainsResponse`, `TokenTransfersResponse`, `TokenBalanceResponse`, `Wallet`, `WalletTransfersResponse` and others), `ApiError`, and the error classes. `isApiError()` is a type guard, so it narrows the item types of batch results. The `Blockchain` and `Token` types suggest the known names but accept any string.
 
 ```typescript
-import WdkIndexerClient, { isApiError, type TokenBalanceResponse } from '@tetherto/wdk-indexer-http'
+import { WdkIndexerClient, isApiError, type TokenBalanceResponse } from '@tetherto/wdk-indexer-http'
 ```
 
 ## Development
