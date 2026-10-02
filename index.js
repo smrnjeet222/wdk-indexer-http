@@ -22,7 +22,7 @@ const {
   WdkIndexerValidationError,
   isApiError
 } = require('./lib/errors.js')
-const { BLOCKCHAINS, TOKENS, BATCH_LIMIT } = require('./lib/constants.js')
+const { BATCH_LIMIT } = require('./lib/constants.js')
 
 module.exports = {
   WdkIndexerClient,
@@ -32,7 +32,5 @@ module.exports = {
   WdkIndexerNetworkError,
   WdkIndexerValidationError,
   isApiError,
-  BLOCKCHAINS,
-  TOKENS,
   BATCH_LIMIT
 }

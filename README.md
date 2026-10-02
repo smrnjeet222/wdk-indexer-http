@@ -259,7 +259,7 @@ A failed check rejects with `WdkIndexerValidationError` (for example `walletId m
 
 Everything else goes to the server as given: option values, enum values, wallet fields and the contents of batch items. The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. The client does **not** check blockchain or token names against a list either. The server decides which chains and tokens it supports, so a newly added chain works without upgrading this package. An unsupported pair comes back as an HTTP 400 `WdkIndexerApiError`. Call `getChains()` to find out what is supported.
 
-The exported `BLOCKCHAINS` and `TOKENS` arrays are a snapshot of what the server supported when this version was released. Use them for autocomplete or docs, not for validation. `BATCH_LIMIT` is `10`.
+`BATCH_LIMIT` is exported as `10`.
 
 ## Error handling
 

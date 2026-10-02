@@ -21,8 +21,6 @@ import WdkIndexerClientDefault, {
   WdkIndexerNetworkError,
   WdkIndexerValidationError,
   isApiError,
-  BLOCKCHAINS,
-  TOKENS,
   BATCH_LIMIT
 } from '@tetherto/wdk-indexer-http'
 import * as esm from '@tetherto/wdk-indexer-http'
@@ -30,9 +28,7 @@ import cjs from '../index.js'
 import * as bare from '@tetherto/wdk-indexer-http/bare'
 
 test('import resolves named exports', (t) => {
-  t.alike(TOKENS, ['usdt', 'xaut', 'usat', 'btc'])
   t.is(BATCH_LIMIT, 10)
-  t.ok(BLOCKCHAINS.includes('avalanche'))
   t.is(typeof WdkIndexerClient, 'function')
   t.is(typeof isApiError, 'function')
   t.ok(isApiError({ error: 'Bad Request', message: 'nope' }))
@@ -49,7 +45,6 @@ test('ESM exposes every CJS export by name', (t) => {
 })
 
 test('ESM and CJS share one implementation', (t) => {
-  t.is(BLOCKCHAINS, cjs.BLOCKCHAINS)
   t.is(WdkIndexerClient, cjs.WdkIndexerClient)
   t.is(WdkIndexerError, cjs.WdkIndexerError)
 })
@@ -79,6 +74,6 @@ test('instanceof works across require and import', async (t) => {
 })
 
 test('import of the ./bare alias resolves the same module', (t) => {
-  t.is(bare.BLOCKCHAINS, BLOCKCHAINS)
+  t.is(bare.WdkIndexerClient, WdkIndexerClient)
   t.is(bare.default, WdkIndexerClient)
 })

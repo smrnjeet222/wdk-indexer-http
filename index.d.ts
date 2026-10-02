@@ -21,7 +21,7 @@
 // Chains and tokens
 // ---------------------------------------------------------------------------
 
-/** Blockchains known when this package was published (see BLOCKCHAINS). */
+/** Blockchains known when this package was published; any other name is passed to the server. */
 export type KnownBlockchain =
   | 'ethereum'
   | 'arbitrum'
@@ -33,7 +33,7 @@ export type KnownBlockchain =
   | 'bitcoin'
   | 'spark'
 
-/** Tokens known when this package was published (see TOKENS). */
+/** Tokens known when this package was published; any other name is passed to the server. */
 export type KnownToken = 'usdt' | 'xaut' | 'usat' | 'btc'
 
 /** A blockchain name. Known names autocomplete; any other string is passed to the server. */
@@ -368,12 +368,6 @@ export declare function isApiError (item: unknown): item is ApiError
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/** Snapshot of supported blockchains, informational only. */
-export declare const BLOCKCHAINS: readonly KnownBlockchain[]
-
-/** Snapshot of supported tokens, informational only. */
-export declare const TOKENS: readonly KnownToken[]
 
 /** Maximum items per batch request and per registerWallets() call. */
 export declare const BATCH_LIMIT: 10

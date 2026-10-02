@@ -17,10 +17,8 @@ const test = require('brittle')
 
 test('require() resolves the package entry', (t) => {
   const api = require('@tetherto/wdk-indexer-http')
-  t.alike(api.TOKENS, ['usdt', 'xaut', 'usat', 'btc'])
+  t.is(typeof api.WdkIndexerClient, 'function')
   t.is(api.BATCH_LIMIT, 10)
-  t.ok(api.BLOCKCHAINS.includes('avalanche'))
-  t.absent(api.BLOCKCHAINS.includes('plasma'))
 })
 
 test('require() of the ./bare alias resolves the same module', (t) => {
@@ -42,8 +40,6 @@ const NAMES = [
   'WdkIndexerNetworkError',
   'WdkIndexerValidationError',
   'isApiError',
-  'BLOCKCHAINS',
-  'TOKENS',
   'BATCH_LIMIT'
 ]
 

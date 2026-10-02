@@ -11,7 +11,7 @@ This release is a ground-up rewrite against the WDK Indexer OpenAPI v1 spec. See
 - `getChains()` (`GET /chains`) returns the supported blockchains, their tokens and address case-sensitivity rules. It needs no API key.
 - `getTransactionTransfers(blockchain, token, txHash)` returns the transfers of one token inside one transaction.
 - Wallet sync endpoints: `registerWallets()`, `listWallets()`, `getWallet()`, `updateWallet()`, `deleteWallet()`, `getWalletTransfers()` and `getTransfers()`, with `blockchain`, `token`, `type`, `from`, `to`, `limit`, `skip` and `sort` filters.
-- Chains and tokens: `avalanche` and `usat` (USAt), in the `BLOCKCHAINS` / `TOKENS` snapshots and the TypeScript types.
+- Chains and tokens: `avalanche` and `usat` (USAt) in the TypeScript types.
 - CommonJS and ESM from one implementation. `require()` and `import` return the same classes, so `instanceof` works across both.
 - Bare runtime support with no setup. The `#fetch` import map picks `bare-fetch` on Bare and the global `fetch` on Node.
 - Hand-written TypeScript definitions (`index.d.ts` for CommonJS, `index.d.mts` for ESM) for every request and response shape. `isApiError()` is a type guard, true for any item with a string `error`.
@@ -32,7 +32,8 @@ This release is a ground-up rewrite against the WDK Indexer OpenAPI v1 spec. See
 - **`apiKey` is optional in the constructor.** The constructor no longer throws without a key. `health()` and `getChains()` work without one and never send it. Every other method rejects with `WdkIndexerValidationError('API key is required')` before sending a request.
 - **`createClient()` was removed.** Use `new WdkIndexerClient(config)`.
 - **`isTokenTransfersResponse()` and `isTokenBalanceResponse()` were removed.** Use `isApiError(item)` to tell failed batch items apart.
-- **Unknown chains and tokens are no longer rejected on the client.** The server decides what it supports and returns HTTP 400 for unsupported pairs. `BLOCKCHAINS` and `TOKENS` are informational snapshots. Use `getChains()` to discover what is supported.
+- **`BLOCKCHAINS` and `TOKENS` were removed.** A hard-coded list goes stale as the server adds chains. Use `getChains()` for the current list; the TypeScript types still autocomplete the known names.
+- **Unknown chains and tokens are no longer rejected on the client.** The server decides what it supports and returns HTTP 400 for unsupported pairs. Use `getChains()` to discover what is supported.
 - **Error constructors and fields changed.** `WdkIndexerApiError.status` is always the HTTP status, and `WdkIndexerNetworkError` now takes the underlying error as its only argument. A missing API key is now a `WdkIndexerValidationError`, not a base `WdkIndexerError`.
 - **The client no longer exposes `apiKey`, `baseUrl`, `timeout` or `fetchFn` as public properties.**
 - **`bare-wdk-runtime` was dropped.** The `./bare` subpath is now an alias of the main entry, and the package depends only on `bare-fetch`.

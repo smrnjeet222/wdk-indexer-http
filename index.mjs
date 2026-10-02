@@ -24,8 +24,6 @@ export const {
   WdkIndexerNetworkError,
   WdkIndexerValidationError,
   isApiError,
-  BLOCKCHAINS,
-  TOKENS,
   BATCH_LIMIT
 } = api
 
