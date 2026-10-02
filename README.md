@@ -222,7 +222,7 @@ const { success } = await client.deleteWallet(walletId)
 
 ### `getWalletTransfers(walletId, filters?)` and `getTransfers(filters?)`
 
-Synced transfers for one registered wallet, or for all your wallets merged together. Both methods take the same optional filters:
+Synced transfers for one registered wallet, or for all your wallets. Both methods take the same optional filters:
 
 | Filter | Type |
 | --- | --- |
@@ -257,7 +257,7 @@ The client checks only what the server can't check for it:
 
 A failed check rejects with `WdkIndexerValidationError` (for example `walletId must be a non-empty string`), and no request is sent.
 
-Everything else goes to the server as given: option values, enum values, wallet fields and the contents of batch items. The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. The client does **not** check blockchain or token names against a list either. The server decides which chains and tokens it supports, so a newly added chain works without upgrading this package. An unsupported pair comes back as an HTTP 400 `WdkIndexerApiError`. Call `getChains()` to find out what is supported.
+Everything else goes to the server as given: option values, enum values, wallet fields and the contents of batch items. The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. Blockchain and token names aren't checked against a list either. The server decides what it supports, so a chain it adds tomorrow works without upgrading this package. Call `getChains()` to see what's supported today.
 
 `BATCH_LIMIT` is exported as `10`.
 
