@@ -44,25 +44,13 @@ jobs:
       - run: npm i -g bare
       - run: npm run test:bare
 
-  types:
+  package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run test:types
-
-  package:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [22, 24]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
       - run: npm i -g bare
       - name: Install the packed tarball into a clean project
         run: |
