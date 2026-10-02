@@ -31,8 +31,7 @@ const batch = [
   { blockchain: 'tron', token: 'usdt', address: 'TXYZ' }
 ]
 const wallets = [{ name: 'main', addresses: { ethereum: ADDR } }]
-const tenItems = Array.from({ length: 10 }, (_, i) => ({ blockchain: 'ethereum', token: 'usdt', address: ADDR + i }))
-const tenWallets = Array.from({ length: 10 }, (_, i) => ({ type: 'client_wallet', addresses: { ethereum: ADDR + i } }))
+const tooMany = Array.from({ length: 11 }, () => ({ blockchain: 'ethereum', token: 'usdt', address: ADDR }))
 const looseBatch = [{ blockchain: 'ethereum', token: 'usdt', address: ADDR, limit: 5000, fromTs: -1, extra: true }]
 
 // [method, args, HTTP method, URL after /api/v1, request body]
@@ -76,9 +75,9 @@ const cases = [
   ['getWallet', ['...'], 'GET', '/wallets/...'],
   // Options are sent as given, in key order; unknown keys are left for the server.
   ['getWalletTransfers', ['w1', { sort: 'asc', blockchain: 'tron', page: 2 }], 'GET', '/wallets/w1/transfers?sort=asc&blockchain=tron&page=2'],
-  // Batch arrays at the 10-item limit are accepted.
-  ['getBatchTokenBalances', [tenItems], 'POST', '/batch/token-balances', tenItems],
-  ['registerWallets', [tenWallets], 'POST', '/wallets', tenWallets],
+  // Batch sizes are left for the server, which enforces 1 to 10 items.
+  ['getBatchTokenBalances', [tooMany], 'POST', '/batch/token-balances', tooMany],
+  ['registerWallets', [[]], 'POST', '/wallets', []],
   // Option values, wallet fields and batch item contents are left for the server.
   ['getTransfers', [{ limit: 5000, sort: 'newest' }], 'GET', '/transfers?limit=5000&sort=newest'],
   ['updateWallet', ['w1', {}], 'PATCH', '/wallets/w1', {}],
@@ -235,8 +234,6 @@ test('timeout defaults to 30000ms', async (t) => {
   t.ok(delays.includes(30000), 'timer armed with 30000ms')
 })
 
-const tooMany = Array.from({ length: 11 }, () => ({ blockchain: 'ethereum', token: 'usdt', address: ADDR }))
-
 // [method, args, message pattern]
 const invalid = [
   ['getTokenTransfers', ['', 'usdt', ADDR], /^blockchain must be a non-empty string$/],
@@ -246,12 +243,6 @@ const invalid = [
   ['getTokenBalance', ['ethereum', 'usdt'], /^address must be a non-empty string$/],
   ['getTransactionTransfers', ['ethereum', 'usdt', ''], /^txHash must be a non-empty string$/],
   ['getTransactionTransfers', [undefined, 'usdt', TX], /^blockchain must be a non-empty string$/],
-  ['getBatchTokenTransfers', [[]], /^requests must be an array of 1 to 10 items$/],
-  ['getBatchTokenTransfers', [tooMany], /^requests must be an array of 1 to 10 items$/],
-  ['getBatchTokenTransfers', [{}], /^requests must be an array/],
-  ['getBatchTokenBalances', [undefined], /^requests must be an array/],
-  ['registerWallets', [[]], /^wallets must be an array of 1 to 10 items$/],
-  ['registerWallets', [Array.from({ length: 11 }, () => wallets[0])], /^wallets must be an array/],
   ['getWallet', [''], /^walletId must be a non-empty string$/],
   ['getWallet', [42], /^walletId must be a non-empty string$/],
   ['deleteWallet', [], /^walletId must be a non-empty string$/],
@@ -269,6 +260,12 @@ const invalid = [
   ['getTokenTransfers', ['ethereum', 'usdt', '..'], /^address must not be/],
   ['getTransactionTransfers', ['ethereum', 'usdt', '..'], /^txHash must not be/]
 ]
+
+test('an invalid path parameter is reported before a missing API key', async (t) => {
+  const fetch = mockFetch()
+  await rejects(t, new WdkIndexerClient({ fetch }).getWallet('..'), WdkIndexerValidationError, /^walletId must not be/)
+  t.is(fetch.calls.length, 0, 'fetch not called')
+})
 
 for (const [name, args, pattern] of invalid) {
   test(name + ' rejects invalid input: ' + pattern.source, async (t) => {

@@ -19,7 +19,7 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you're upgrading from 1.0.
   - `WdkIndexerTimeoutError` has `timeout`.
   - `WdkIndexerNetworkError` has `cause`.
   - An empty or non-JSON error body produces the message `HTTP <status> <statusText>`.
-- Client-side checks are limited to what the server can't check: path parameters must be non-empty strings other than `.` and `..`, batch arrays must have 1 to 10 items, and authenticated methods need an API key. Everything else is validated by the server.
+- Client-side checks are limited to what the server can't check: path parameters must be non-empty strings other than `.` and `..`, and authenticated methods need an API key. Everything else is validated by the server.
 - Unit tests run on both Node and Bare (`npm test`, `npm run test:bare`). Opt-in live tests run with `npm run test:integration`.
 
 ### Breaking changes

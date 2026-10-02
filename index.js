@@ -22,7 +22,9 @@ const {
   WdkIndexerValidationError,
   isApiError
 } = require('./lib/errors.js')
-const { BATCH_LIMIT } = require('./lib/validate.js')
+
+// Most items the server accepts per batch request or registerWallets() call.
+const BATCH_LIMIT = 10
 
 module.exports = {
   WdkIndexerClient,

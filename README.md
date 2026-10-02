@@ -252,14 +252,13 @@ Options that are `undefined` are left out of the query string, and keys that are
 The client checks only what the server can't check for it:
 
 - `blockchain`, `token`, `address`, `txHash` and `walletId` must be non-empty strings other than `'.'` and `'..'`. They are URL path segments, and fetch would resolve those values to a different endpoint.
-- Batch requests and `registerWallets()` take arrays of 1 to 10 items.
 - Authenticated methods need an `apiKey`.
 
 A failed check rejects with `WdkIndexerValidationError` (for example `walletId must be a non-empty string`), and no request is sent.
 
-Everything else goes to the server as given: option values, enum values, wallet fields and the contents of batch items. The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. Blockchain and token names aren't checked against a list either. The server decides what it supports, so a chain it adds tomorrow works without upgrading this package. Call `getChains()` to see what's supported today.
+Everything else goes to the server as given: option values, enum values, wallet fields, and batch arrays and their items (the server takes 1 to 10). The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. Blockchain and token names aren't checked against a list either. The server decides what it supports, so a chain it adds tomorrow works without upgrading this package. Call `getChains()` to see what's supported today.
 
-`BATCH_LIMIT` is exported as `10`.
+`BATCH_LIMIT` is the server's batch size limit (`10`), exported so you can split a long address list into batches.
 
 ## Error handling
 
