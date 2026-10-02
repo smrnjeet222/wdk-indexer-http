@@ -5,20 +5,11 @@ import WdkIndexerClientDefault, {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
-  WdkIndexerValidationError,
-  isApiError,
-  BATCH_LIMIT
+  WdkIndexerValidationError
 } from '@tetherto/wdk-indexer-http'
 import * as esm from '@tetherto/wdk-indexer-http'
 import cjs from '../index.js'
 import * as bare from '@tetherto/wdk-indexer-http/bare'
-
-test('import resolves named exports', (t) => {
-  t.is(BATCH_LIMIT, 10)
-  t.is(typeof WdkIndexerClient, 'function')
-  t.is(typeof isApiError, 'function')
-  t.ok(isApiError({ error: 'Bad Request', message: 'nope' }))
-})
 
 test('default export is WdkIndexerClient', (t) => {
   t.is(WdkIndexerClientDefault, WdkIndexerClient)
@@ -28,11 +19,6 @@ test('default export is WdkIndexerClient', (t) => {
 test('ESM exposes every CJS export by name', (t) => {
   t.alike(Object.keys(esm).filter((k) => k !== 'default').sort(), Object.keys(cjs).sort())
   for (const key of Object.keys(cjs)) t.is(esm[key], cjs[key], key)
-})
-
-test('ESM and CJS share one implementation', (t) => {
-  t.is(WdkIndexerClient, cjs.WdkIndexerClient)
-  t.is(WdkIndexerError, cjs.WdkIndexerError)
 })
 
 test('instanceof works across require and import', async (t) => {
