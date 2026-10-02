@@ -30,31 +30,29 @@ function throws (t, fn, pattern) {
 const item = { blockchain: 'ethereum', token: 'usdt', address: '0xabc' }
 const many = (n, x) => Array.from({ length: n }, () => x)
 
-test('assertSegment: non-empty string', (t) => {
-  t.execution(() => v.assertSegment('w1', 'walletId'))
-  t.execution(() => v.assertSegment('a'.repeat(300), 'txHash'), 'length is left to the server')
-  throws(t, () => v.assertSegment('', 'walletId'), /^walletId must be a non-empty string$/)
-  throws(t, () => v.assertSegment(undefined, 'address'), /^address must be a non-empty string$/)
-  throws(t, () => v.assertSegment(42, 'walletId'), /^walletId must be a non-empty string$/)
+test('assertSegments: each value a non-empty string', (t) => {
+  t.execution(() => v.assertSegments({ walletId: 'w1' }))
+  t.execution(() => v.assertSegments({ blockchain: 'ethereum', token: 'usdt', address: '0xabc' }))
+  t.execution(() => v.assertSegments({ txHash: 'a'.repeat(300) }), 'length is left to the server')
+  throws(t, () => v.assertSegments({ walletId: '' }), /^walletId must be a non-empty string$/)
+  throws(t, () => v.assertSegments({ blockchain: 'ethereum', token: 'usdt', address: undefined }), /^address must be a non-empty string$/)
+  throws(t, () => v.assertSegments({ walletId: 42 }), /^walletId must be a non-empty string$/)
 })
 
-test('assertSegment rejects dot segments', (t) => {
-  t.execution(() => v.assertSegment('...', 'walletId'))
-  t.execution(() => v.assertSegment('a.b', 'walletId'))
-  throws(t, () => v.assertSegment('.', 'walletId'), /^walletId must not be '\.' or '\.\.'$/)
-  throws(t, () => v.assertSegment('..', 'address'), /^address must not be/)
+test('assertSegments reports the first failing parameter by name', (t) => {
+  throws(t, () => v.assertSegments({ blockchain: '', token: '' }), /^blockchain must be a non-empty string$/)
+  throws(t, () => v.assertSegments({ blockchain: 'ethereum', token: '.' }), /^token must not be/)
 })
 
-test('assertSegment does not check chain or token lists', (t) => {
-  t.execution(() => v.assertSegment('plasma', 'blockchain'))
-  t.execution(() => v.assertSegment('doge', 'token'))
+test('assertSegments rejects dot segments', (t) => {
+  t.execution(() => v.assertSegments({ walletId: '...' }))
+  t.execution(() => v.assertSegments({ walletId: 'a.b' }))
+  throws(t, () => v.assertSegments({ walletId: '.' }), /^walletId must not be '\.' or '\.\.'$/)
+  throws(t, () => v.assertSegments({ address: '..' }), /^address must not be/)
 })
 
-test('assertAddressPath checks blockchain, token and address', (t) => {
-  t.execution(() => v.assertAddressPath('ethereum', 'usdt', '0xabc'))
-  throws(t, () => v.assertAddressPath('', 'usdt', '0xabc'), /^blockchain must be a non-empty string$/)
-  throws(t, () => v.assertAddressPath('ethereum', '.', '0xabc'), /^token must not be/)
-  throws(t, () => v.assertAddressPath('ethereum', 'usdt', null), /^address must be a non-empty string$/)
+test('assertSegments does not check chain or token lists', (t) => {
+  t.execution(() => v.assertSegments({ blockchain: 'plasma', token: 'doge' }))
 })
 
 test('assertList: 1..10 items, contents left to the server', (t) => {
