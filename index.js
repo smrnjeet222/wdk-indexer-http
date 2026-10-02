@@ -22,7 +22,7 @@ const {
   WdkIndexerValidationError,
   isApiError
 } = require('./lib/errors.js')
-const { BATCH_LIMIT } = require('./lib/constants.js')
+const { BATCH_LIMIT } = require('./lib/validate.js')
 
 module.exports = {
   WdkIndexerClient,
