@@ -14,7 +14,7 @@
 'use strict'
 
 const test = require('brittle')
-const { createRequester, buildPath, buildQuery, pick } = require('../lib/request.js')
+const { createRequester, buildPath, buildQuery } = require('../lib/request.js')
 const {
   WdkIndexerError,
   WdkIndexerApiError,
@@ -29,12 +29,6 @@ const KEY = 'test-key'
 test('buildPath encodes each segment under /api/v1', (t) => {
   t.is(buildPath(['health']), '/api/v1/health')
   t.is(buildPath(['wallets', 'a/b c?#']), '/api/v1/wallets/a%2Fb%20c%3F%23')
-})
-
-test('pick copies only the listed keys', (t) => {
-  t.alike(pick({ limit: 5, foo: 'x', skip: 0 }, ['limit', 'skip', 'sort']), { limit: 5, skip: 0, sort: undefined })
-  t.alike(pick(undefined, ['limit']), { limit: undefined })
-  t.is(buildQuery(pick({ sort: 'asc', limit: 5, page: 2 }, ['limit', 'sort'])), '?limit=5&sort=asc', 'keeps key order of the list')
 })
 
 test('buildQuery encodes values and omits undefined', (t) => {

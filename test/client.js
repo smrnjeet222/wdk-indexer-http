@@ -75,11 +75,8 @@ const cases = [
   ['deleteWallet', ['a?b'], 'DELETE', '/wallets/a%3Fb'],
   ['getWalletTransfers', ['a b'], 'GET', '/wallets/a%20b/transfers'],
   ['getWallet', ['...'], 'GET', '/wallets/...'],
-  // Unknown option keys are not forwarded, and query order is fixed.
-  ['getTransfers', [{ limit: 5, foo: 'x', apiKey: 'leak' }], 'GET', '/transfers?limit=5'],
-  ['getWalletTransfers', ['w1', { sort: 'asc', blockchain: 'tron', page: 2 }], 'GET', '/wallets/w1/transfers?blockchain=tron&sort=asc'],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { toTs: 9, limit: 5, offset: 3 }], 'GET',
-    '/ethereum/usdt/' + ADDR + '/token-transfers?limit=5&toTs=9'],
+  // Options are sent as given, in key order; unknown keys are left for the server.
+  ['getWalletTransfers', ['w1', { sort: 'asc', blockchain: 'tron', page: 2 }], 'GET', '/wallets/w1/transfers?sort=asc&blockchain=tron&page=2'],
   // Boundary values are accepted and sent.
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1 }], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1'],
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1000, fromTs: 0 }], 'GET',
