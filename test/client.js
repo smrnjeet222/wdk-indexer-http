@@ -16,41 +16,12 @@
 const test = require('brittle')
 const { WdkIndexerClient } = require('../lib/client.js')
 const { WdkIndexerApiError, WdkIndexerTimeoutError, WdkIndexerValidationError } = require('../lib/errors.js')
+const { reply, mockFetch, rejects } = require('./helpers')
 
 const KEY = 'test-key'
 const BASE = 'https://wdk-api.tether.su/api/v1'
 const ADDR = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
 const TX = '0x' + 'ab'.repeat(32)
-
-// Minimal stand-in for a fetch Response.
-function reply (status, body, statusText = '') {
-  const text = body === undefined ? '' : JSON.stringify(body)
-  return { ok: status >= 200 && status < 300, status, statusText, text: async () => text }
-}
-
-// Mock fetch that records every call and answers with `respond`.
-function mockFetch (respond = () => reply(200, { ok: true })) {
-  const calls = []
-  const fetch = async (url, init) => {
-    calls.push({ url, ...init })
-    return respond(url, init)
-  }
-  fetch.calls = calls
-  return fetch
-}
-
-// Await a rejection, check its class and message, and return it.
-async function rejects (t, promise, ErrorClass, pattern) {
-  try {
-    await promise
-  } catch (err) {
-    t.ok(err instanceof ErrorClass, 'is ' + ErrorClass.name)
-    t.ok(pattern.test(err.message), err.message)
-    return err
-  }
-  t.fail('should reject')
-  return {}
-}
 
 const GET_HEADERS = { Accept: 'application/json', 'X-API-KEY': KEY }
 const BODY_HEADERS = { ...GET_HEADERS, 'Content-Type': 'application/json' }
