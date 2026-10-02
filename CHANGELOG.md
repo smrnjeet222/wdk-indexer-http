@@ -20,8 +20,7 @@ This release is a ground-up rewrite against the WDK Indexer OpenAPI v1 spec. See
   - `WdkIndexerTimeoutError` has `timeout`.
   - `WdkIndexerNetworkError` has `cause`.
   - An empty or non-JSON error body produces the message `HTTP <status> <statusText>`.
-- Validation messages name the field that failed, e.g. `requests[2].token must be a non-empty string`.
-- Path parameters equal to `.` or `..` are rejected, so they can't be resolved to a different endpoint.
+- Client-side checks are limited to what the server can't check: path parameters must be non-empty strings other than `.` and `..`, batch arrays must have 1 to 10 items, and authenticated methods need an API key. Everything else is validated by the server.
 - Unit tests run on both Node and Bare (`npm test`, `npm run test:bare`). Opt-in live tests run with `npm run test:integration`.
 
 ### Breaking changes
@@ -33,7 +32,7 @@ This release is a ground-up rewrite against the WDK Indexer OpenAPI v1 spec. See
 - **`apiKey` is optional in the constructor.** The constructor no longer throws without a key. `health()` and `getChains()` work without one and never send it. Every other method rejects with `WdkIndexerValidationError('API key is required')` before sending a request.
 - **`createClient()` was removed.** Use `new WdkIndexerClient(config)`.
 - **`isTokenTransfersResponse()` and `isTokenBalanceResponse()` were removed.** Use `isApiError(item)` to tell failed batch items apart.
-- **Unknown chains and tokens are no longer rejected on the client.** Only argument shape is validated. The server decides what it supports and returns HTTP 400 for unsupported pairs. `BLOCKCHAINS` and `TOKENS` are informational snapshots. Use `getChains()` to discover what is supported.
+- **Unknown chains and tokens are no longer rejected on the client.** The server decides what it supports and returns HTTP 400 for unsupported pairs. `BLOCKCHAINS` and `TOKENS` are informational snapshots. Use `getChains()` to discover what is supported.
 - **Error constructors and fields changed.** `WdkIndexerApiError.status` is always the HTTP status, and `WdkIndexerNetworkError` now takes the underlying error as its only argument. A missing API key is now a `WdkIndexerValidationError`, not a base `WdkIndexerError`.
 - **The client no longer exposes `apiKey`, `baseUrl`, `timeout` or `fetchFn` as public properties.**
 - **`bare-wdk-runtime` was dropped.** The `./bare` subpath is now an alias of the main entry, and the package depends only on `bare-fetch`.

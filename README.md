@@ -249,17 +249,15 @@ Options that are `undefined` are left out of the query string, and keys that are
 
 ## Validation
 
-Before sending a request, the client checks the **shape** of your arguments:
+The client checks only what the server can't check for it:
 
-- `blockchain`, `token`, `address` and `walletId` must be non-empty strings. `txHash` must be a non-empty string of at most 255 characters. Because these are URL path segments, `'.'` and `'..'` are rejected (fetch would resolve them to a different endpoint).
-- String length limits (`txHash`, wallet `name`) count Unicode code points, as the spec does, so an emoji counts as one character.
-- Batch requests and `registerWallets()` take arrays of 1 to 10 objects. Batch items need non-empty `blockchain`, `token` and `address`. Wallets need a non-empty `addresses` object.
-- Numbers must be integers within the ranges above, and enum options must be one of their listed values.
-- `updateWallet()` patches must follow the rules in that section.
+- `blockchain`, `token`, `address`, `txHash` and `walletId` must be non-empty strings other than `'.'` and `'..'`. They are URL path segments, and fetch would resolve those values to a different endpoint.
+- Batch requests and `registerWallets()` take arrays of 1 to 10 items.
+- Authenticated methods need an `apiKey`.
 
-A failed check rejects with `WdkIndexerValidationError`, and the message names the field (for example `requests[2].token must be a non-empty string`). No request is sent.
+A failed check rejects with `WdkIndexerValidationError` (for example `walletId must be a non-empty string`), and no request is sent.
 
-The client does **not** check blockchain or token names against a list. The server decides which chains and tokens it supports, so a newly added chain works without upgrading this package. An unsupported pair comes back as an HTTP 400 `WdkIndexerApiError`. Call `getChains()` to find out what is supported.
+Everything else goes to the server as given: option values, enum values, wallet fields and the contents of batch items. The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. The client does **not** check blockchain or token names against a list either. The server decides which chains and tokens it supports, so a newly added chain works without upgrading this package. An unsupported pair comes back as an HTTP 400 `WdkIndexerApiError`. Call `getChains()` to find out what is supported.
 
 The exported `BLOCKCHAINS` and `TOKENS` arrays are a snapshot of what the server supported when this version was released. Use them for autocomplete or docs, not for validation. `BATCH_LIMIT` is `10`.
 

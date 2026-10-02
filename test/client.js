@@ -34,7 +34,6 @@ const wallets = [{ name: 'main', addresses: { ethereum: ADDR } }]
 const tenItems = Array.from({ length: 10 }, (_, i) => ({ blockchain: 'ethereum', token: 'usdt', address: ADDR + i }))
 const tenWallets = Array.from({ length: 10 }, (_, i) => ({ type: 'client_wallet', addresses: { ethereum: ADDR + i } }))
 const looseBatch = [{ blockchain: 'ethereum', token: 'usdt', address: ADDR, limit: 5000, fromTs: -1, extra: true }]
-const EMOJI_NAME = '\u{1F600}'.repeat(60) // 60 code points, 120 UTF-16 units
 
 // [method, args, HTTP method, URL after /api/v1, request body]
 const cases = [
@@ -77,17 +76,13 @@ const cases = [
   ['getWallet', ['...'], 'GET', '/wallets/...'],
   // Options are sent as given, in key order; unknown keys are left for the server.
   ['getWalletTransfers', ['w1', { sort: 'asc', blockchain: 'tron', page: 2 }], 'GET', '/wallets/w1/transfers?sort=asc&blockchain=tron&page=2'],
-  // Boundary values are accepted and sent.
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1 }], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1'],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1000, fromTs: 0 }], 'GET',
-    '/ethereum/usdt/' + ADDR + '/token-transfers?limit=1000&fromTs=0'],
-  ['getTransactionTransfers', ['ethereum', 'usdt', 'f'.repeat(255)], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + 'f'.repeat(255)],
-  ['getWalletTransfers', ['w1', { limit: 100, skip: 0 }], 'GET', '/wallets/w1/transfers?limit=100&skip=0'],
-  ['updateWallet', ['w1', { name: 'n'.repeat(100) }], 'PATCH', '/wallets/w1', { name: 'n'.repeat(100) }],
-  ['updateWallet', ['w1', { name: EMOJI_NAME }], 'PATCH', '/wallets/w1', { name: EMOJI_NAME }],
+  // Batch arrays at the 10-item limit are accepted.
   ['getBatchTokenBalances', [tenItems], 'POST', '/batch/token-balances', tenItems],
   ['registerWallets', [tenWallets], 'POST', '/wallets', tenWallets],
-  // Shape-only validation: extra keys and missing `type` are left for the server.
+  // Option values, wallet fields and batch item contents are left for the server.
+  ['getTransfers', [{ limit: 5000, sort: 'newest' }], 'GET', '/transfers?limit=5000&sort=newest'],
+  ['updateWallet', ['w1', {}], 'PATCH', '/wallets/w1', {}],
+  ['getTransactionTransfers', ['ethereum', 'usdt', 'a'.repeat(300)], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + 'a'.repeat(300)],
   ['getBatchTokenTransfers', [looseBatch], 'POST', '/batch/token-transfers', looseBatch],
   ['registerWallets', [[{ addresses: { plasma: 'x' } }]], 'POST', '/wallets', [{ addresses: { plasma: 'x' } }]]
 ]
@@ -247,49 +242,21 @@ const invalid = [
   ['getTokenTransfers', ['', 'usdt', ADDR], /^blockchain must be a non-empty string$/],
   ['getTokenTransfers', ['ethereum', 1, ADDR], /^token must be a non-empty string$/],
   ['getTokenTransfers', ['ethereum', 'usdt', null], /^address must be a non-empty string$/],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, 'x'], /^options must be an object$/],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 0 }], /^options\.limit must be an integer from 1 to 1000$/],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1001 }], /^options\.limit/],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 1.5 }], /^options\.limit/],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { fromTs: -1 }], /^options\.fromTs must be an integer >= 0$/],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { toTs: '5' }], /^options\.toTs/],
   ['getTokenBalance', ['ethereum', '', ADDR], /^token must be a non-empty string$/],
   ['getTokenBalance', ['ethereum', 'usdt'], /^address must be a non-empty string$/],
   ['getTransactionTransfers', ['ethereum', 'usdt', ''], /^txHash must be a non-empty string$/],
-  ['getTransactionTransfers', ['ethereum', 'usdt', 'a'.repeat(256)], /^txHash must be at most 255 characters$/],
   ['getTransactionTransfers', [undefined, 'usdt', TX], /^blockchain must be a non-empty string$/],
   ['getBatchTokenTransfers', [[]], /^requests must be an array of 1 to 10 items$/],
   ['getBatchTokenTransfers', [tooMany], /^requests must be an array of 1 to 10 items$/],
   ['getBatchTokenTransfers', [{}], /^requests must be an array/],
-  ['getBatchTokenTransfers', [[null]], /^requests\[0\] must be an object$/],
-  ['getBatchTokenBalances', [[batch[0], { blockchain: 'ethereum', address: ADDR }]], /^requests\[1\]\.token must be a non-empty string$/],
   ['getBatchTokenBalances', [undefined], /^requests must be an array/],
   ['registerWallets', [[]], /^wallets must be an array of 1 to 10 items$/],
   ['registerWallets', [Array.from({ length: 11 }, () => wallets[0])], /^wallets must be an array/],
-  ['registerWallets', [[{ name: 'x' }]], /^wallets\[0\]\.addresses must be a non-empty object$/],
-  ['registerWallets', [[{ addresses: {} }]], /^wallets\[0\]\.addresses must be a non-empty object$/],
   ['getWallet', [''], /^walletId must be a non-empty string$/],
   ['getWallet', [42], /^walletId must be a non-empty string$/],
   ['deleteWallet', [], /^walletId must be a non-empty string$/],
   ['updateWallet', [undefined, { name: 'x' }], /^walletId must be a non-empty string$/],
-  ['updateWallet', ['w1'], /^patch must be an object$/],
-  ['updateWallet', ['w1', {}], /^patch must set name or enabled$/],
-  ['updateWallet', ['w1', { name: 'x', color: 'red' }], /^patch has unknown field: color$/],
-  ['updateWallet', ['w1', { name: '' }], /^patch\.name must be a non-empty string$/],
-  ['updateWallet', ['w1', { name: 'a'.repeat(101) }], /^patch\.name must be at most 100 characters$/],
-  ['updateWallet', ['w1', { enabled: 'yes' }], /^patch\.enabled must be a boolean$/],
   ['getWalletTransfers', ['', {}], /^walletId must be a non-empty string$/],
-  ['getWalletTransfers', ['w1', []], /^filters must be an object$/],
-  ['getWalletTransfers', ['w1', { limit: 101 }], /^filters\.limit must be an integer from 1 to 100$/],
-  ['getWalletTransfers', ['w1', { limit: 0 }], /^filters\.limit/],
-  ['getWalletTransfers', ['w1', { skip: -1 }], /^filters\.skip must be an integer >= 0$/],
-  ['getWalletTransfers', ['w1', { type: 'both' }], /^filters\.type must be one of: sent, received$/],
-  ['getWalletTransfers', ['w1', { sort: 'up' }], /^filters\.sort must be one of: asc, desc$/],
-  ['getTransfers', [{ from: '' }], /^filters\.from must be an integer >= 0 or a non-empty string$/],
-  ['getTransfers', [{ to: -5 }], /^filters\.to must be an integer >= 0 or a non-empty string$/],
-  ['getTransfers', [{ blockchain: '' }], /^filters\.blockchain must be a non-empty string$/],
-  ['getTransfers', [{ token: 7 }], /^filters\.token must be a non-empty string$/],
-  ['getTransfers', ['ethereum'], /^filters must be an object$/],
   // '.' and '..' would be collapsed by fetch and reach another endpoint.
   ['getWallet', ['..'], /^walletId must not be '\.' or '\.\.'$/],
   ['getWallet', ['.'], /^walletId must not be/],
@@ -300,8 +267,7 @@ const invalid = [
   ['getTokenBalance', ['..', 'usdt', ADDR], /^blockchain must not be/],
   ['getTokenBalance', ['ethereum', '.', ADDR], /^token must not be/],
   ['getTokenTransfers', ['ethereum', 'usdt', '..'], /^address must not be/],
-  ['getTransactionTransfers', ['ethereum', 'usdt', '..'], /^txHash must not be/],
-  ['updateWallet', ['w1', { name: '\u{1F600}'.repeat(101) }], /^patch\.name must be at most 100 characters$/]
+  ['getTransactionTransfers', ['ethereum', 'usdt', '..'], /^txHash must not be/]
 ]
 
 for (const [name, args, pattern] of invalid) {
