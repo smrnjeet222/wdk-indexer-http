@@ -2,7 +2,6 @@
   "name": "@tetherto/wdk-indexer-http",
   "version": "1.0.0",
   "description": "HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether, providing blockchain token transfers and balances.",
-  "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
