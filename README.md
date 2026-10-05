@@ -1,13 +1,15 @@
 # @tetherto/wdk-indexer-http
 
-HTTP client for the Tether WDK Indexer API. Query token transfers and balances, look up the transfers of a single transaction, and register wallets so their transfers are synced for you. Supported networks include Ethereum, Arbitrum, Avalanche, Polygon, Tron, TON, Bitcoin and Spark.
+HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether. Access blockchain token transfers and balances across multiple networks including Ethereum, Tron, Polygon, Arbitrum, TON, Bitcoin, and more.
 
 - Works on Node.js (>= 22) and the [Bare](https://github.com/holepunchto/bare) runtime
 - CommonJS and ESM from a single implementation
 - One runtime dependency (`bare-fetch`, used only on Bare)
 - Typed errors and bundled TypeScript definitions
 
-## Getting an API key
+See the [Indexer API documentation](https://docs.wdk.tether.io/tools/indexer-api/).
+
+## Getting an API Key
 
 Every endpoint except `health()` and `getChains()` needs an API key. Request one at https://wdk-api.tether.io/register
 
