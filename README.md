@@ -4,7 +4,7 @@ HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether. Acc
 
 - Works on Node.js (>= 22) and the [Bare](https://github.com/holepunchto/bare) runtime
 - CommonJS and ESM from a single implementation
-- Two runtime dependencies (`bare-fetch` and `bare-abort-controller`, used only on Bare)
+- No runtime dependencies on Node; Bare needs `bare-fetch` and `bare-abort-controller` (optional peers)
 - Typed errors and bundled TypeScript definitions
 
 See the [Indexer API documentation](https://docs.wdk.tether.io/tools/indexer-api/).
@@ -17,6 +17,12 @@ Every endpoint except `health()` and `getChains()` needs an API key. Request one
 
 ```bash
 npm install @tetherto/wdk-indexer-http
+```
+
+On Bare, also install the optional peer dependencies:
+
+```bash
+npm install bare-fetch bare-abort-controller
 ```
 
 ## Quick start
@@ -49,7 +55,7 @@ client.getTokenTransfers('tron', 'usdt', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', {
 
 ## Bare runtime
 
-Use the same import on Bare. The package's import maps pick `bare-fetch` and `bare-abort-controller` on Bare and the globals on Node, so you don't need to configure anything:
+Use the same import on Bare. The package's import maps pick `bare-fetch` and `bare-abort-controller` on Bare and the globals on Node, so you don't need to configure anything beyond installing them (see [Installation](#installation)):
 
 ```javascript
 const { WdkIndexerClient } = require('@tetherto/wdk-indexer-http')

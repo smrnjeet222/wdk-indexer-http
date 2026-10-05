@@ -71,11 +71,21 @@
   "engines": {
     "node": ">=22"
   },
-  "dependencies": {
+  "peerDependencies": {
     "bare-abort-controller": "^1.1.2",
     "bare-fetch": "^3.4.0"
   },
+  "peerDependenciesMeta": {
+    "bare-abort-controller": {
+      "optional": true
+    },
+    "bare-fetch": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "bare-abort-controller": "^1.1.2",
+    "bare-fetch": "^3.4.0",
     "brittle": "^3.19.1",
     "standard": "^17.1.2"
   },

@@ -51,6 +51,8 @@ jobs:
           cd "$RUNNER_TEMP/pkg"
           npm init -y > /dev/null
           npm i --no-audit --no-fund ./tetherto-wdk-indexer-http-*.tgz
+          # Optional peers, needed only on Bare
+          npm i --no-audit --no-fund bare-fetch bare-abort-controller
       - name: Smoke test on Node and Bare
         working-directory: ${{ runner.temp }}/pkg
         run: |
