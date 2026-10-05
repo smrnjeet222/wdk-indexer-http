@@ -74,7 +74,7 @@ const client = new WdkIndexerClient({
 })
 ```
 
-- `apiKey` is sent as the `X-API-KEY` header. If it is missing, authenticated methods reject with `WdkIndexerValidationError('API key is required')` without making a request. `health()` and `getChains()` never send the key.
+- `apiKey` is sent as the `X-API-KEY` header. If it is missing, authenticated methods reject with `WdkIndexerError('API key is required')` without making a request. `health()` and `getChains()` never send the key.
 - `fetch` is any WHATWG-compatible `fetch(url, init)`. Use it to add logging, retries or a proxy, or to mock the API in tests.
 - Requests always send `Accept: application/json`. `Content-Type: application/json` is sent only when there is a body.
 - `timeout` rejects with `WdkIndexerTimeoutError` and aborts the request, on Node and Bare alike.
@@ -251,18 +251,19 @@ const { transfers } = await client.getWalletTransfers(walletId, {
 const everything = await client.getTransfers({ blockchain: 'tron', skip: 50, limit: 50 })
 ```
 
-Options that are `undefined` are left out of the query string, and keys that aren't documented are ignored.
+Leave out options you don't want to send: a key set to `undefined` is sent as the string `undefined`. Keys that aren't documented are ignored.
 
 ## Validation
 
-The client checks only what the server can't check for it:
+The client checks only one thing: authenticated methods need an `apiKey`. Without one they reject with `WdkIndexerError` and no request is sent.
 
-- `blockchain`, `token`, `address`, `txHash` and `walletId` must be non-empty strings other than `'.'` and `'..'`. They are URL path segments, and fetch would resolve those values to a different endpoint.
-- Authenticated methods need an `apiKey`.
+Everything else goes to the server as given: path parameters, option values, enum values, wallet fields, and batch arrays and their items (the server takes 1 to 10). The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. Blockchain and token names aren't checked against a list either. The server decides what it supports, so a chain it adds tomorrow works without upgrading this package. Call `getChains()` to see what's supported today.
 
-A failed check rejects with `WdkIndexerValidationError` (for example `walletId must be a non-empty string`), and no request is sent.
+### Path parameters
 
-Everything else goes to the server as given: option values, enum values, wallet fields, and batch arrays and their items (the server takes 1 to 10). The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. Blockchain and token names aren't checked against a list either. The server decides what it supports, so a chain it adds tomorrow works without upgrading this package. Call `getChains()` to see what's supported today.
+`blockchain`, `token`, `address`, `txHash` and `walletId` are inserted into the URL as given, without encoding. Values in the formats the API documents are URL-safe: hex hashes, `0x…` addresses, base58 and bech32 addresses, TON addresses in URL-safe base64 (`-` and `_`), and wallet IDs returned by `registerWallets()`.
+
+A value containing `/`, `?`, `#` or `%`, or equal to `.` or `..`, changes the request URL instead of being sent as one segment. For example, a TON address in standard base64 (`EQCx…Id/sDs`) is split at the `/`, and the API answers 404 `Route … not found`. A `?` or `#` can even route the request to a different endpoint. Pass TON addresses in their URL-safe form, or encode such values yourself with `encodeURIComponent()` before calling the client.
 
 `BATCH_LIMIT` is the server's batch size limit (`10`), exported so you can split a long address list into batches.
 
@@ -272,11 +273,10 @@ All errors extend `WdkIndexerError`, and `instanceof` works the same whether you
 
 | Class | When | Extra fields |
 | --- | --- | --- |
-| `WdkIndexerValidationError` | Invalid arguments, or no API key for an authenticated method | none |
 | `WdkIndexerApiError` | The API answered with an error status | `status`, `errorType` (`body.error`), `body` |
 | `WdkIndexerTimeoutError` | No response within `timeout` ms | `timeout` |
 | `WdkIndexerNetworkError` | `fetch` failed, or the body couldn't be read | `cause` |
-| `WdkIndexerError` | Base class. Also thrown directly when a 2xx response isn't valid JSON | none |
+| `WdkIndexerError` | Base class. Also thrown directly when an authenticated method has no API key, or a 2xx response isn't valid JSON | none |
 
 For `WdkIndexerApiError`, `message` is the server's `message`. If the error body is empty or isn't JSON, the message is `HTTP <status> <statusText>`, and `body` holds the raw text or `null`.
 
@@ -284,16 +284,13 @@ For `WdkIndexerApiError`, `message` is the server's `message`. If the error body
 const {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
-  WdkIndexerNetworkError,
-  WdkIndexerValidationError
+  WdkIndexerNetworkError
 } = require('@tetherto/wdk-indexer-http')
 
 try {
   await client.getTokenBalance('ethereum', 'usdt', address)
 } catch (err) {
-  if (err instanceof WdkIndexerValidationError) {
-    console.error('bad input:', err.message)
-  } else if (err instanceof WdkIndexerApiError) {
+  if (err instanceof WdkIndexerApiError) {
     // 400 invalid params, 401 expired key, 403 missing or invalid key, 404, 429 rate limited, 5xx
     console.error(err.status, err.errorType, err.message)
   } else if (err instanceof WdkIndexerTimeoutError) {

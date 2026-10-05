@@ -6,7 +6,6 @@ const {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
-  WdkIndexerValidationError,
   isApiError
 } = require('./lib/errors.js')
 
@@ -21,7 +20,6 @@ module.exports = {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
-  WdkIndexerValidationError,
   isApiError,
   BATCH_LIMIT
 }

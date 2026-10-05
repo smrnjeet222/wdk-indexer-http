@@ -11,7 +11,6 @@ const {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
-  WdkIndexerValidationError,
   isApiError
 } = require('@tetherto/wdk-indexer-http')
 
@@ -119,8 +118,7 @@ async function main () {
 }
 
 main().catch((err) => {
-  if (err instanceof WdkIndexerValidationError) console.error('Invalid input:', err.message)
-  else if (err instanceof WdkIndexerApiError) console.error(`API error ${err.status} (${err.errorType}):`, err.message)
+  if (err instanceof WdkIndexerApiError) console.error(`API error ${err.status} (${err.errorType}):`, err.message)
   else if (err instanceof WdkIndexerTimeoutError) console.error(`Timed out after ${err.timeout}ms`)
   else if (err instanceof WdkIndexerNetworkError) console.error('Network error:', err.cause)
   else console.error(err)

@@ -2,7 +2,7 @@
 
 const test = require('brittle')
 const { WdkIndexerClient } = require('../lib/client.js')
-const { WdkIndexerApiError, WdkIndexerTimeoutError, WdkIndexerValidationError } = require('../lib/errors.js')
+const { WdkIndexerError, WdkIndexerApiError, WdkIndexerTimeoutError } = require('../lib/errors.js')
 const { reply, mockFetch, rejects } = require('./helpers')
 
 const KEY = 'test-key'
@@ -26,15 +26,12 @@ const cases = [
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR], 'GET', '/ethereum/usdt/' + ADDR + '/token-transfers'],
   ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { limit: 10, fromTs: 0, toTs: 1700000000 }], 'GET',
     '/ethereum/usdt/' + ADDR + '/token-transfers?limit=10&fromTs=0&toTs=1700000000'],
-  ['getTokenTransfers', ['ethereum', 'usdt', ADDR, { toTs: 5, limit: undefined }], 'GET',
-    '/ethereum/usdt/' + ADDR + '/token-transfers?toTs=5'],
-  ['getTokenBalance', ['ton', 'usdt', 'EQ/a+b'], 'GET', '/ton/usdt/EQ%2Fa%2Bb/token-balances'],
+  ['getTokenBalance', ['ton', 'usdt', 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'], 'GET', '/ton/usdt/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs/token-balances'],
   ['getTransactionTransfers', ['ethereum', 'usdt', TX], 'GET', '/blockchains/ethereum/usdt/token-transfers/' + TX],
   ['getBatchTokenTransfers', [batch], 'POST', '/batch/token-transfers', batch],
   ['getBatchTokenBalances', [batch], 'POST', '/batch/token-balances', batch],
   ['registerWallets', [wallets], 'POST', '/wallets', wallets],
   ['listWallets', [], 'GET', '/wallets'],
-  ['getWallet', ['w 1/2'], 'GET', '/wallets/w%201%2F2'],
   ['updateWallet', ['w1', { name: 'renamed' }], 'PATCH', '/wallets/w1', { name: 'renamed' }],
   ['updateWallet', ['w1', { enabled: false }], 'PATCH', '/wallets/w1', { enabled: false }],
   ['deleteWallet', ['w1'], 'DELETE', '/wallets/w1'],
@@ -51,15 +48,8 @@ const cases = [
   }], 'GET', '/wallets/w1/transfers?blockchain=ethereum&token=usdt&type=sent' +
     '&from=2025-01-01T00%3A00%3A00%2B01%3A00&to=1700000000&limit=100&skip=0&sort=asc'],
   ['getTransfers', [], 'GET', '/transfers'],
-  ['getTransfers', [{ type: 'received', limit: 1, sort: 'desc', blockchain: undefined }], 'GET',
+  ['getTransfers', [{ type: 'received', limit: 1, sort: 'desc' }], 'GET',
     '/transfers?type=received&limit=1&sort=desc'],
-  // Path segment encoding for every parameter.
-  ['getTransactionTransfers', ['eth/x', 'us dt', '0x#1'], 'GET', '/blockchains/eth%2Fx/us%20dt/token-transfers/0x%231'],
-  ['getTokenTransfers', ['a?b', 'c&d', 'e f'], 'GET', '/a%3Fb/c%26d/e%20f/token-transfers'],
-  ['updateWallet', ['a/b', { enabled: true }], 'PATCH', '/wallets/a%2Fb', { enabled: true }],
-  ['deleteWallet', ['a?b'], 'DELETE', '/wallets/a%3Fb'],
-  ['getWalletTransfers', ['a b'], 'GET', '/wallets/a%20b/transfers'],
-  ['getWallet', ['...'], 'GET', '/wallets/...'],
   // Options are sent as given, in key order; unknown keys are left for the server.
   ['getWalletTransfers', ['w1', { sort: 'asc', blockchain: 'tron', page: 2 }], 'GET', '/wallets/w1/transfers?sort=asc&blockchain=tron&page=2'],
   // Batch sizes are left for the server, which enforces 1 to 10 items.
@@ -90,8 +80,8 @@ for (const [name, args, method, path, body] of cases) {
 
   test(name + ' requires an API key', async (t) => {
     const fetch = mockFetch()
-    await rejects(t, new WdkIndexerClient({ fetch })[name](...args), WdkIndexerValidationError, /^API key is required$/)
-    await rejects(t, new WdkIndexerClient({ apiKey: '', fetch })[name](...args), WdkIndexerValidationError, /^API key is required$/)
+    await rejects(t, new WdkIndexerClient({ fetch })[name](...args), WdkIndexerError, /^API key is required$/)
+    await rejects(t, new WdkIndexerClient({ apiKey: '', fetch })[name](...args), WdkIndexerError, /^API key is required$/)
     t.is(fetch.calls.length, 0, 'fetch not called')
   })
 }
@@ -220,45 +210,3 @@ test('timeout defaults to 30000ms', async (t) => {
   }
   t.ok(delays.includes(30000), 'timer armed with 30000ms')
 })
-
-// [method, args, message pattern]
-const invalid = [
-  ['getTokenTransfers', ['', 'usdt', ADDR], /^blockchain must be a non-empty string$/],
-  ['getTokenTransfers', ['ethereum', 1, ADDR], /^token must be a non-empty string$/],
-  ['getTokenTransfers', ['ethereum', 'usdt', null], /^address must be a non-empty string$/],
-  ['getTokenBalance', ['ethereum', '', ADDR], /^token must be a non-empty string$/],
-  ['getTokenBalance', ['ethereum', 'usdt'], /^address must be a non-empty string$/],
-  ['getTransactionTransfers', ['ethereum', 'usdt', ''], /^txHash must be a non-empty string$/],
-  ['getTransactionTransfers', [undefined, 'usdt', TX], /^blockchain must be a non-empty string$/],
-  ['getWallet', [''], /^walletId must be a non-empty string$/],
-  ['getWallet', [42], /^walletId must be a non-empty string$/],
-  ['deleteWallet', [], /^walletId must be a non-empty string$/],
-  ['updateWallet', [undefined, { name: 'x' }], /^walletId must be a non-empty string$/],
-  ['getWalletTransfers', ['', {}], /^walletId must be a non-empty string$/],
-  // '.' and '..' would be collapsed by fetch and reach another endpoint.
-  ['getWallet', ['..'], /^walletId must not be '\.' or '\.\.'$/],
-  ['getWallet', ['.'], /^walletId must not be/],
-  ['deleteWallet', ['..'], /^walletId must not be/],
-  ['deleteWallet', ['.'], /^walletId must not be/],
-  ['updateWallet', ['..', { name: 'x' }], /^walletId must not be/],
-  ['getWalletTransfers', ['..'], /^walletId must not be/],
-  ['getTokenBalance', ['..', 'usdt', ADDR], /^blockchain must not be/],
-  ['getTokenBalance', ['ethereum', '.', ADDR], /^token must not be/],
-  ['getTokenTransfers', ['ethereum', 'usdt', '..'], /^address must not be/],
-  ['getTransactionTransfers', ['ethereum', 'usdt', '..'], /^txHash must not be/]
-]
-
-test('an invalid path parameter is reported before a missing API key', async (t) => {
-  const fetch = mockFetch()
-  await rejects(t, new WdkIndexerClient({ fetch }).getWallet('..'), WdkIndexerValidationError, /^walletId must not be/)
-  t.is(fetch.calls.length, 0, 'fetch not called')
-})
-
-for (const [name, args, pattern] of invalid) {
-  test(name + ' rejects invalid input: ' + pattern.source, async (t) => {
-    const fetch = mockFetch()
-    const client = new WdkIndexerClient({ apiKey: KEY, fetch })
-    await rejects(t, client[name](...args), WdkIndexerValidationError, pattern)
-    t.is(fetch.calls.length, 0, 'fetch not called')
-  })
-}

@@ -25,7 +25,6 @@ const NAMES = [
   'WdkIndexerApiError',
   'WdkIndexerTimeoutError',
   'WdkIndexerNetworkError',
-  'WdkIndexerValidationError',
   'isApiError',
   'BATCH_LIMIT'
 ]

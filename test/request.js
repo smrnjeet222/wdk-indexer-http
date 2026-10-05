@@ -20,7 +20,7 @@ const client = (options) => new WdkIndexerClient({ apiKey: KEY, ...options })
 test('query keys and values are encoded', async (t) => {
   const fetch = mockFetch()
   await client({ fetch }).getTransfers({ 'a b': 'x&y=z', from: '2025-01-01T00:00:00+01:00' })
-  t.is(fetch.calls[0].url, 'https://wdk-api.tether.su/api/v1/transfers?a%20b=x%26y%3Dz&from=2025-01-01T00%3A00%3A00%2B01%3A00')
+  t.is(fetch.calls[0].url, 'https://wdk-api.tether.su/api/v1/transfers?a+b=x%26y%3Dz&from=2025-01-01T00%3A00%3A00%2B01%3A00')
 })
 
 test('2xx empty body resolves to null', async (t) => {
@@ -181,4 +181,15 @@ test('timeout closes the connection to a real server on this runtime', async (t)
   await rejects(t, new WdkIndexerClient({ baseUrl, timeout: 50 }).health(), WdkIndexerTimeoutError, /timed out/)
   await closedPromise
   t.pass('server saw the socket close')
+})
+
+// A browser's native fetch throws "Illegal invocation" when `this` is the client.
+test('custom fetch is called without the client as this', async (t) => {
+  let self = 'unset'
+  const fetch = function () {
+    self = this
+    return Promise.resolve(reply(200, {}))
+  }
+  await client({ fetch }).listWallets()
+  t.is(self, undefined)
 })

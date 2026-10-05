@@ -344,9 +344,6 @@ export declare class WdkIndexerNetworkError extends WdkIndexerError {
   cause: unknown
 }
 
-/** Arguments failed client-side shape validation; no request was sent. */
-export declare class WdkIndexerValidationError extends WdkIndexerError {}
-
 /** True when a batch result item is an error entry (it has a string `error`). */
 export declare function isApiError (item: unknown): item is ApiError
 

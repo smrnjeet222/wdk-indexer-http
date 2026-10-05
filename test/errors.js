@@ -6,7 +6,6 @@ const {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
-  WdkIndexerValidationError,
   isApiError
 } = require('../lib/errors.js')
 
@@ -14,8 +13,7 @@ test('every error extends WdkIndexerError and Error, with its own name', (t) => 
   const errors = [
     new WdkIndexerApiError(400, 'Bad Request', null),
     new WdkIndexerTimeoutError(10),
-    new WdkIndexerNetworkError(new Error('boom')),
-    new WdkIndexerValidationError('bad')
+    new WdkIndexerNetworkError(new Error('boom'))
   ]
   for (const err of errors) {
     t.ok(err instanceof WdkIndexerError)
