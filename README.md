@@ -3,8 +3,8 @@
 HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether. Access blockchain token transfers and balances across multiple networks including Ethereum, Tron, Polygon, Arbitrum, TON, Bitcoin, and more.
 
 - Works on Node.js (>= 22) and the [Bare](https://github.com/holepunchto/bare) runtime
-- CommonJS and ESM from a single implementation
-- No runtime dependencies on Node; Bare needs `bare-fetch` and `bare-abort-controller` (optional peers)
+- CommonJS and ESM from one implementation
+- No runtime dependencies on Node. Bare needs `bare-fetch` and `bare-abort-controller` (optional peer dependencies)
 - Typed errors and bundled TypeScript definitions
 
 See the [Indexer API documentation](https://docs.wdk.tether.io/tools/indexer-api/).
@@ -55,33 +55,33 @@ client.getTokenTransfers('tron', 'usdt', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', {
 
 ## Bare runtime
 
-Use the same import on Bare. The package's import maps pick `bare-fetch` and `bare-abort-controller` on Bare and the globals on Node, so you don't need to configure anything beyond installing them (see [Installation](#installation)):
+Use the same import on Bare. The package's import maps select `bare-fetch` and `bare-abort-controller` on Bare and the globals on Node. You only need to install the two packages (see [Installation](#installation)).
 
 ```javascript
 const { WdkIndexerClient } = require('@tetherto/wdk-indexer-http')
 ```
 
-The `@tetherto/wdk-indexer-http/bare` subpath is still published for compatibility with 1.0.0-beta.1. It is now an alias of the main entry.
+The `@tetherto/wdk-indexer-http/bare` subpath is an alias of the main entry. It stays for compatibility with 1.0.0-beta.1.
 
 ## Configuration
 
 ```javascript
 const client = new WdkIndexerClient({
-  apiKey: 'your-api-key',               // optional; required by every method except health() and getChains()
-  baseUrl: 'https://wdk-api.tether.su', // optional; the default. A trailing slash is removed
-  timeout: 30000,                       // optional; per-request timeout in ms (default 30000)
-  fetch: customFetch                    // optional; replaces the built-in fetch
+  apiKey: 'your-api-key',               // optional. Required by every method except health() and getChains()
+  baseUrl: 'https://wdk-api.tether.su', // optional. This is the default. Trailing slashes are removed
+  timeout: 30000,                       // optional. Per-request timeout in ms (default 30000)
+  fetch: customFetch                    // optional. Replaces the built-in fetch
 })
 ```
 
-- `apiKey` is sent as the `X-API-KEY` header. If it is missing, authenticated methods reject with `WdkIndexerError('API key is required')` without making a request. `health()` and `getChains()` never send the key.
+- The client sends `apiKey` in the `X-API-KEY` header. Without a key, authenticated methods reject with `WdkIndexerError('API key is required')` and send no request. `health()` and `getChains()` never send the key.
 - `fetch` is any WHATWG-compatible `fetch(url, init)`. Use it to add logging, retries or a proxy, or to mock the API in tests.
-- Requests always send `Accept: application/json`. `Content-Type: application/json` is sent only when there is a body.
-- `timeout` rejects with `WdkIndexerTimeoutError` and aborts the request, on Node and Bare alike.
+- Every request sends `Accept: application/json`. Requests with a body also send `Content-Type: application/json`.
+- `timeout` rejects with `WdkIndexerTimeoutError` and aborts the request, on Node and on Bare.
 
 ## Methods
 
-Every method returns a promise that resolves with the parsed JSON body exactly as the API returns it. All paths are under `/api/v1`.
+Every method returns a promise. The promise resolves with the parsed JSON body, exactly as the API returns it. All paths are under `/api/v1`.
 
 | Method | Endpoint | Key |
 | --- | --- | --- |
@@ -102,7 +102,9 @@ Every method returns a promise that resolves with the parsed JSON body exactly a
 
 ### `health()`
 
-Deep health check of the API and its indexers. The API answers HTTP 200 when the overall status is `healthy` and HTTP 503 when it is `degraded` or `unhealthy`. The client resolves with the body in both cases, so check `status` instead of catching. Any other error status rejects, and so does a 503 without a JSON body (for example an HTML page from a proxy).
+Deep health check of the API and its indexers. The API returns HTTP 200 when the status is `healthy`, and HTTP 503 when it is `degraded` or `unhealthy`. The client resolves with the body in both cases, so check `status` instead of catching an error.
+
+The client rejects any other error status. It also rejects a 503 without a JSON body, for example an HTML page from a proxy.
 
 ```javascript
 const health = await client.health()
@@ -113,7 +115,7 @@ if (health.status !== 'healthy') console.warn('indexer is', health.status)
 
 ### `getChains()`
 
-Lists the blockchains the server supports, the tokens available on each, and address case-sensitivity rules. Use it to find out which blockchain and token pairs are valid.
+Lists the blockchains the server supports, the tokens on each blockchain, and the address case-sensitivity rules. Use it to find the valid blockchain and token pairs.
 
 ```javascript
 const { chains } = await client.getChains()
@@ -150,7 +152,7 @@ const { tokenBalance } = await client.getTokenBalance('tron', 'usdt', 'TR7NHqjeK
 
 ### `getTransactionTransfers(blockchain, token, txHash)`
 
-Transfers of one token inside one transaction. `txHash` can be up to 255 characters. If the transaction moved none of that token, or doesn't exist, the API returns 404 and the client throws `WdkIndexerApiError`.
+Transfers of one token inside one transaction. `txHash` can have up to 255 characters. If the transaction does not exist, or moved none of that token, the API returns 404 and the client throws `WdkIndexerApiError`.
 
 ```javascript
 const { transfers } = await client.getTransactionTransfers('ethereum', 'usdt', '0xabc...')
@@ -158,7 +160,11 @@ const { transfers } = await client.getTransactionTransfers('ethereum', 'usdt', '
 
 ### `getBatchTokenTransfers(requests)`
 
-Transfer history for up to 10 addresses (`BATCH_LIMIT`) in one request. Each item takes `{ blockchain, token, address, limit?, fromTs?, toTs? }`. Items are processed independently, and the result array keeps the request order. A failed item comes back as an error object (`{ error, message?, status? }`) instead of a result, so check each one with `isApiError()`, which is true for any item with a string `error`.
+Transfer history for up to 10 addresses in one request. Each item takes `{ blockchain, token, address, limit?, fromTs?, toTs? }`.
+
+The server handles each item independently. The result array keeps the request order. A failed item comes back as an error object (`{ error, message?, status? }`). Check each item with `isApiError()`, which is true for any item with a string `error`.
+
+The package exports `BATCH_LIMIT` (`10`). Use it to split a long address list into batches.
 
 ```javascript
 const { isApiError } = require('@tetherto/wdk-indexer-http')
@@ -175,7 +181,7 @@ for (const item of results) {
 
 ### `getBatchTokenBalances(requests)`
 
-Balances for up to 10 addresses in one request. Each item takes `{ blockchain, token, address }`. Failed items are reported per item, as in `getBatchTokenTransfers()`.
+Balances for up to 10 addresses in one request. Each item takes `{ blockchain, token, address }`. Each failed item comes back as an error object, as in `getBatchTokenTransfers()`.
 
 ```javascript
 const results = await client.getBatchTokenBalances([
@@ -189,7 +195,11 @@ for (const item of results) {
 
 ### `registerWallets(wallets)`
 
-Registers 1 to 10 wallets. The server then keeps syncing transfers for their addresses. Each wallet needs `type: 'client_wallet'` and an `addresses` object keyed by blockchain. `name` and `meta` are optional, except that registering a `spark` address requires `meta.spark`. Each wallet gets its own result `status`: 201 created, 400 invalid, or 429 wallet limit reached.
+Registers 1 to 10 wallets. The server then syncs the transfers of their addresses.
+
+- Each wallet needs `type: 'client_wallet'` and an `addresses` object keyed by blockchain.
+- `name` and `meta` are optional. A `spark` address requires `meta.spark`.
+- Each wallet gets its own result `status`: 201 created, 400 invalid, or 429 wallet limit reached.
 
 ```javascript
 const { wallets } = await client.registerWallets([
@@ -212,7 +222,7 @@ const wallet = await client.getWallet(wallets[0].id)
 
 ### `updateWallet(walletId, patch)`
 
-Renames a wallet or turns its syncing on or off. The patch must contain `name` (1 to 100 characters), `enabled` (boolean), or both, and no other keys. Resolves with the updated wallet.
+Renames a wallet, or turns its syncing on or off. The patch must contain `name` (1 to 100 characters), `enabled` (boolean), or both, and no other keys. Resolves with the updated wallet.
 
 ```javascript
 await client.updateWallet(walletId, { name: 'Cold storage', enabled: false })
@@ -220,7 +230,7 @@ await client.updateWallet(walletId, { name: 'Cold storage', enabled: false })
 
 ### `deleteWallet(walletId)`
 
-Deletes the wallet and stops syncing it. Its addresses can be registered again later.
+Deletes the wallet and stops its syncing. You can register its addresses again later.
 
 ```javascript
 const { success } = await client.deleteWallet(walletId)
@@ -251,34 +261,39 @@ const { transfers } = await client.getWalletTransfers(walletId, {
 const everything = await client.getTransfers({ blockchain: 'tron', skip: 50, limit: 50 })
 ```
 
-Options set to `undefined` or `null` are left out of the query string, and keys that aren't documented are ignored.
+The client leaves options set to `undefined` or `null` out of the query string. The server ignores keys it does not know.
 
 ## Validation
 
-The client checks only one thing: authenticated methods need an `apiKey`. Without one they reject with `WdkIndexerError` and no request is sent.
+The client checks one thing: authenticated methods need an `apiKey`. Without it, the method rejects with `WdkIndexerError` and sends no request.
 
-Everything else goes to the server as given: path parameters, option values, enum values, wallet fields, and batch arrays and their items (the server takes 1 to 10). The server rejects invalid values with an HTTP 400 `WdkIndexerApiError` whose message names the field. Blockchain and token names aren't checked against a list either. The server decides what it supports, so a chain it adds tomorrow works without upgrading this package. Call `getChains()` to see what's supported today.
+The server checks everything else, and rejects a bad value with HTTP 400. The method then rejects with a `WdkIndexerApiError` whose message names the field. The client does not check blockchain or token names, so a chain that the server adds later works without an upgrade. Call `getChains()` for the current list.
 
 ### Path parameters
 
-`blockchain`, `token`, `address`, `txHash` and `walletId` are inserted into the URL as given, without encoding. Values in the formats the API documents are URL-safe: hex hashes, `0x…` addresses, base58 and bech32 addresses, TON addresses in URL-safe base64 (`-` and `_`), and wallet IDs returned by `registerWallets()`.
+The client puts `blockchain`, `token`, `address`, `txHash` and `walletId` into the URL as given, without encoding. All formats that the API documents are URL-safe.
 
-A value containing `/`, `?`, `#` or `%`, or equal to `.` or `..`, changes the request URL instead of being sent as one segment. For example, a TON address in standard base64 (`EQCx…Id/sDs`) is split at the `/`, and the API answers 404 `Route … not found`. A `?` or `#` can even route the request to a different endpoint. Pass TON addresses in their URL-safe form, or encode such values yourself with `encodeURIComponent()` before calling the client.
+These characters change the request URL:
 
-`BATCH_LIMIT` is the server's batch size limit (`10`), exported so you can split a long address list into batches.
+- `/` splits the value into two path segments.
+- `?` and `#` end the path. The request can go to a different endpoint.
+- `%` starts an escape sequence.
+- `fetch` drops a full value of `.` or `..` from the path. For `..`, it also drops the segment before it.
+
+Example: a TON address in standard base64 (`EQCx…Id/sDs`) splits at the `/`, and the API returns 404. Use the URL-safe form of TON addresses (`-` and `_`). For other values, encode the value with `encodeURIComponent()` before you call the client.
 
 ## Error handling
 
-All errors extend `WdkIndexerError`, and `instanceof` works the same whether you load the package with `require` or `import`.
+All errors extend `WdkIndexerError`. `instanceof` works the same with `require` and with `import`.
 
 | Class | When | Extra fields |
 | --- | --- | --- |
-| `WdkIndexerApiError` | The API answered with an error status | `status`, `errorType` (`body.error`), `body` |
+| `WdkIndexerApiError` | The API returned an error status | `status`, `errorType` (`body.error`), `body` |
 | `WdkIndexerTimeoutError` | No response within `timeout` ms | `timeout` |
-| `WdkIndexerNetworkError` | `fetch` failed, or the body couldn't be read | `cause` |
-| `WdkIndexerError` | Base class. Also thrown directly when an authenticated method has no API key, or a 2xx response isn't valid JSON | none |
+| `WdkIndexerNetworkError` | `fetch` failed, or the client could not read the body | `cause` |
+| `WdkIndexerError` | Base class. The client also throws it when an authenticated method has no API key, or when a 2xx body is not valid JSON | none |
 
-For `WdkIndexerApiError`, `message` is the server's `message`. If the error body is empty or isn't JSON, the message is `HTTP <status> <statusText>`, and `body` holds the raw text or `null`.
+For `WdkIndexerApiError`, `message` is the server's `message`. If the error body is empty or not JSON, the message is `HTTP <status> <statusText>`, and `body` holds the raw text or `null`.
 
 ```javascript
 const {
@@ -305,7 +320,12 @@ try {
 
 ## TypeScript
 
-Type definitions ship in `index.d.ts` and resolve correctly under `moduleResolution` `node16`/`nodenext`, `bundler` and `node10`. They include the client, config, options, request items, response bodies (`HealthResponse`, `ChainsResponse`, `TokenTransfersResponse`, `TokenBalanceResponse`, `Wallet`, `WalletTransfersResponse` and others), `ApiError`, and the error classes. `isApiError()` is a type guard, so it narrows the item types of batch results. The `Blockchain` and `Token` types suggest the known names but accept any string.
+The package includes type definitions in `index.d.ts`. They work with `moduleResolution` `node16`/`nodenext`, `bundler` and `node10`.
+
+The types cover the client, the config, the options, the request items, `ApiError` and the error classes. They also cover the response bodies: `HealthResponse`, `ChainsResponse`, `TokenTransfersResponse`, `TokenBalanceResponse`, `Wallet`, `WalletTransfersResponse` and others.
+
+- `isApiError()` is a type guard. It narrows the item types of batch results.
+- The `Blockchain` and `Token` types suggest the known names, but accept any string.
 
 ```typescript
 import { WdkIndexerClient, isApiError, type TokenBalanceResponse } from '@tetherto/wdk-indexer-http'
@@ -334,17 +354,17 @@ The integration tests read these environment variables:
 
 | Variable | Required | Description |
 |---|---|---|
-| `WDK_INDEXER_API_KEY` | For authenticated tests | API key sent as `X-API-KEY`. Without it, only `health()` and `getChains()` run and the rest are skipped. |
-| `WDK_INDEXER_WALLET_TESTS` | No | Set to `1` to also run the wallet lifecycle test. It registers, updates and deletes a wallet on your account, and cleans up after itself. |
+| `WDK_INDEXER_API_KEY` | For authenticated tests | API key for the `X-API-KEY` header. Without it, only the `health()` and `getChains()` tests run. The tests skip the rest. |
+| `WDK_INDEXER_WALLET_TESTS` | No | Set to `1` to also run the wallet lifecycle test. It registers, updates and then deletes a wallet on your account. |
 | `WDK_INDEXER_BASE_URL` | No | Target another deployment instead of `https://wdk-api.tether.su`. |
 
-The tests don't load a `.env` file themselves. To keep the values in one, export it into the shell first:
+The tests do not read a `.env` file. To use one, export it into the shell first:
 
 ```bash
 set -a && . ./.env && set +a && npm run test:integration
 ```
 
-`examples/usage.js` runs through every read method:
+`examples/usage.js` calls every read method:
 
 ```bash
 WDK_INDEXER_API_KEY=your-key node examples/usage.js
