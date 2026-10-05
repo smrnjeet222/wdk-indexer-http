@@ -80,8 +80,10 @@ for (const [name, args, method, path, body] of cases) {
 
   test(name + ' requires an API key', async (t) => {
     const fetch = mockFetch()
-    await rejects(t, new WdkIndexerClient({ fetch })[name](...args), WdkIndexerError, /^API key is required$/)
-    await rejects(t, new WdkIndexerClient({ apiKey: '', fetch })[name](...args), WdkIndexerError, /^API key is required$/)
+    for (const apiKey of [undefined, '']) {
+      const err = await rejects(t, new WdkIndexerClient({ apiKey, fetch })[name](...args), WdkIndexerError, /^API key is required$/)
+      t.is(err.constructor, WdkIndexerError, 'the base class, not a subclass')
+    }
     t.is(fetch.calls.length, 0, 'fetch not called')
   })
 }
@@ -209,4 +211,22 @@ test('timeout defaults to 30000ms', async (t) => {
     globalThis.setTimeout = realSet
   }
   t.ok(delays.includes(30000), 'timer armed with 30000ms')
+})
+
+// Path values go into the URL as given (see "Path parameters" in the README).
+test('path values are inserted without encoding', async (t) => {
+  const fetch = mockFetch()
+  const client = new WdkIndexerClient({ apiKey: KEY, fetch })
+  await client.getWallet('a/b')
+  await client.getWallet('a%2Fb') // already encoded by the caller: sent once, not twice
+  t.is(fetch.calls[0].url, BASE + '/wallets/a/b')
+  t.is(fetch.calls[1].url, BASE + '/wallets/a%2Fb')
+})
+
+test('config and the request method are private', (t) => {
+  const client = new WdkIndexerClient({ apiKey: KEY })
+  t.alike(Object.keys(client), [], 'no own enumerable properties')
+  t.is(client.apiKey, undefined)
+  t.is(client._request, undefined)
+  t.absent(JSON.stringify(client).includes(KEY), 'API key not serialized')
 })

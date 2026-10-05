@@ -232,7 +232,7 @@ Synced transfers for one registered wallet, or for all your wallets. Both method
 
 | Filter | Type |
 | --- | --- |
-| `blockchain`, `token` | non-empty string |
+| `blockchain`, `token` | a blockchain or token name, e.g. `'ethereum'`, `'usdt'` |
 | `type` | `'sent'` or `'received'` |
 | `from`, `to` | time in ms (integer >= 0) or an ISO 8601 string |
 | `limit` | integer from 1 to 100 (the server default is 10) |
@@ -251,7 +251,7 @@ const { transfers } = await client.getWalletTransfers(walletId, {
 const everything = await client.getTransfers({ blockchain: 'tron', skip: 50, limit: 50 })
 ```
 
-Leave out options you don't want to send: a key set to `undefined` is sent as the string `undefined`. Keys that aren't documented are ignored.
+Options set to `undefined` or `null` are left out of the query string, and keys that aren't documented are ignored.
 
 ## Validation
 

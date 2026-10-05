@@ -1,7 +1,7 @@
 'use strict'
 
-// Request-layer behaviour (encoding, response parsing, transport errors,
-// timeouts), tested through WdkIndexerClient with fetch as the only seam.
+// Request-layer behaviour (query-string encoding, response parsing, transport
+// errors, timeouts), tested through WdkIndexerClient with fetch as the only seam.
 // URL, header, body and API-key rules per endpoint live in test/client.js.
 
 const test = require('brittle')
@@ -21,6 +21,21 @@ test('query keys and values are encoded', async (t) => {
   const fetch = mockFetch()
   await client({ fetch }).getTransfers({ 'a b': 'x&y=z', from: '2025-01-01T00:00:00+01:00' })
   t.is(fetch.calls[0].url, 'https://wdk-api.tether.su/api/v1/transfers?a+b=x%26y%3Dz&from=2025-01-01T00%3A00%3A00%2B01%3A00')
+})
+
+// Node's URLSearchParams would send these as text and Bare's skips them; the client drops them on both.
+test('query keys set to undefined or null are left out', async (t) => {
+  const fetch = mockFetch()
+  await client({ fetch }).getTransfers({ limit: undefined, token: null, skip: 0, sort: 'asc' })
+  t.is(fetch.calls[0].url, 'https://wdk-api.tether.su/api/v1/transfers?skip=0&sort=asc')
+})
+
+test('no options or null options sends no query string', async (t) => {
+  const fetch = mockFetch()
+  await client({ fetch }).getTransfers()
+  await client({ fetch }).getTransfers(null)
+  t.is(fetch.calls[0].url, 'https://wdk-api.tether.su/api/v1/transfers')
+  t.is(fetch.calls[1].url, 'https://wdk-api.tether.su/api/v1/transfers')
 })
 
 test('2xx empty body resolves to null', async (t) => {
