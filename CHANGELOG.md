@@ -12,7 +12,7 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you're upgrading from 1.0.
 - `getTransactionTransfers(blockchain, token, txHash)` returns the transfers of one token inside one transaction.
 - Wallet sync endpoints: `registerWallets()`, `listWallets()`, `getWallet()`, `updateWallet()`, `deleteWallet()`, `getWalletTransfers()` and `getTransfers()`, with `blockchain`, `token`, `type`, `from`, `to`, `limit`, `skip` and `sort` filters.
 - CommonJS and ESM from one file. `require()` and named `import` return the same classes, so `instanceof` works across both.
-- Bare runtime support with no setup. The `#fetch` import map picks `bare-fetch` on Bare and the global `fetch` on Node.
+- Bare runtime support with no setup. The `#fetch` and `#abort-controller` import maps pick `bare-fetch` and `bare-abort-controller` on Bare, and the globals on Node.
 - Hand-written TypeScript definitions (`index.d.ts`) for every request and response shape. `isApiError()` is a type guard, true for any item with a string `error`.
 - Error details:
   - `WdkIndexerApiError` has `status` (the HTTP status), `errorType`, `message` and the parsed `body`.
@@ -36,7 +36,7 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you're upgrading from 1.0.
 - The client no longer rejects unknown chains or tokens. The server decides what it supports and answers 400 for an unsupported pair.
 - `WdkIndexerApiError.status` is always the HTTP status, and `WdkIndexerNetworkError` takes the underlying error as its only argument. A missing API key is a `WdkIndexerValidationError` now, not a plain `WdkIndexerError`.
 - `apiKey`, `baseUrl`, `timeout` and `fetchFn` are no longer public properties of the client.
-- `bare-wdk-runtime` is dropped. The `./bare` subpath is an alias of the main entry, and the only dependency is `bare-fetch`.
+- `bare-wdk-runtime` is dropped. The `./bare` subpath is an alias of the main entry, and the only dependencies are `bare-fetch` and `bare-abort-controller`, both used only on Bare.
 - Node.js 22 or later is required (it was 18).
 - The package is no longer `"type": "module"`. The source is CommonJS, and ESM code imports it with named imports.
 

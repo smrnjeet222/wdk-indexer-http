@@ -4,7 +4,7 @@ HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether. Acc
 
 - Works on Node.js (>= 22) and the [Bare](https://github.com/holepunchto/bare) runtime
 - CommonJS and ESM from a single implementation
-- One runtime dependency (`bare-fetch`, used only on Bare)
+- Two runtime dependencies (`bare-fetch` and `bare-abort-controller`, used only on Bare)
 - Typed errors and bundled TypeScript definitions
 
 See the [Indexer API documentation](https://docs.wdk.tether.io/tools/indexer-api/).
@@ -49,7 +49,7 @@ client.getTokenTransfers('tron', 'usdt', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', {
 
 ## Bare runtime
 
-Use the same import on Bare. The package's `#fetch` import map picks `bare-fetch` on Bare and the global `fetch` on Node, so you don't need to configure anything:
+Use the same import on Bare. The package's import maps pick `bare-fetch` and `bare-abort-controller` on Bare and the globals on Node, so you don't need to configure anything:
 
 ```javascript
 const { WdkIndexerClient } = require('@tetherto/wdk-indexer-http')
@@ -71,7 +71,7 @@ const client = new WdkIndexerClient({
 - `apiKey` is sent as the `X-API-KEY` header. If it is missing, authenticated methods reject with `WdkIndexerValidationError('API key is required')` without making a request. `health()` and `getChains()` never send the key.
 - `fetch` is any WHATWG-compatible `fetch(url, init)`. Use it to add logging, retries or a proxy, or to mock the API in tests.
 - Requests always send `Accept: application/json`. `Content-Type: application/json` is sent only when there is a body.
-- `timeout` rejects with `WdkIndexerTimeoutError`. When the runtime has `AbortController` (Node), the request is aborted as well. Bare has no `AbortController`, so there the timeout only stops waiting and the socket stays open until the server answers. To cancel requests on Bare, set `globalThis.AbortController` first (for example from `bare-abort-controller`); `bare-fetch` honours the signal.
+- `timeout` rejects with `WdkIndexerTimeoutError` and aborts the request, on Node and Bare alike.
 
 ## Methods
 

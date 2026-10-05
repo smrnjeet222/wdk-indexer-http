@@ -16,6 +16,10 @@
     "./package.json": "./package.json"
   },
   "imports": {
+    "#abort-controller": {
+      "bare": "bare-abort-controller",
+      "default": "./lib/abort-controller.js"
+    },
     "#fetch": {
       "bare": "bare-fetch",
       "default": "./lib/fetch.js"
@@ -68,6 +72,7 @@
     "node": ">=22"
   },
   "dependencies": {
+    "bare-abort-controller": "^1.1.2",
     "bare-fetch": "^3.4.0"
   },
   "devDependencies": {

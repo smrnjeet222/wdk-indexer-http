@@ -13,6 +13,12 @@ test('#fetch resolves to the runtime fetch', (t) => {
   else t.is(fetch, require('../lib/fetch.js'), 'global fetch wrapper on Node')
 })
 
+test('#abort-controller resolves to the runtime AbortController', (t) => {
+  const AbortController = require('#abort-controller')
+  if (typeof Bare !== 'undefined') t.is(AbortController, require('bare-abort-controller'), 'bare-abort-controller on Bare')
+  else t.is(AbortController, globalThis.AbortController, 'global AbortController on Node')
+})
+
 const NAMES = [
   'WdkIndexerClient',
   'WdkIndexerError',

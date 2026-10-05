@@ -106,22 +106,7 @@ test('timer is cleared after success, error and timeout', async (t) => {
   t.is(spy.timers.filter((timer) => timer.ms === 10).length, 1, 'one timer per request')
 })
 
-// Stand-in for runtimes without AbortController (Bare).
-class FakeAbortController {
-  constructor () {
-    const listeners = []
-    this.signal = { aborted: false, addEventListener: (type, fn) => listeners.push(fn) }
-    this.listeners = listeners
-  }
-
-  abort () {
-    this.signal.aborted = true
-    for (const fn of this.listeners) fn()
-  }
-}
-
-test('passes a signal and aborts it on timeout when AbortController exists', async (t) => {
-  if (typeof globalThis.AbortController !== 'function') swapGlobal(t, 'AbortController', FakeAbortController)
+test('passes a signal and aborts it on timeout', async (t) => {
   const fetch = mockFetch(() => new Promise(() => {}))
   await rejects(t, client({ timeout: 10, fetch }).listWallets(), WdkIndexerTimeoutError, /timed out/)
   const { signal } = fetch.calls[0]
@@ -130,7 +115,6 @@ test('passes a signal and aborts it on timeout when AbortController exists', asy
 })
 
 test('a fetch that rejects on abort still gives WdkIndexerTimeoutError', async (t) => {
-  if (typeof globalThis.AbortController !== 'function') swapGlobal(t, 'AbortController', FakeAbortController)
   const fetch = (url, init) => new Promise((resolve, reject) => {
     init.signal.addEventListener('abort', () => {
       const err = new Error('This operation was aborted')
@@ -142,13 +126,6 @@ test('a fetch that rejects on abort still gives WdkIndexerTimeoutError', async (
   t.is(err.timeout, 10)
   // Let the aborted fetch settle; an unhandled rejection would fail the run.
   await new Promise((resolve) => setTimeout(resolve, 20))
-})
-
-test('passes no signal when AbortController is absent', async (t) => {
-  swapGlobal(t, 'AbortController', undefined)
-  const fetch = mockFetch()
-  await client({ fetch }).listWallets()
-  t.absent('signal' in fetch.calls[0])
 })
 
 // Local HTTP server that echoes each request as JSON. Works on Node and Bare
@@ -189,4 +166,19 @@ test('default fetch (#fetch) reaches a real server on this runtime', async (t) =
   t.is(posted.method, 'POST')
   t.is(posted.headers['content-type'], 'application/json')
   t.alike(JSON.parse(posted.body), body, 'POST body arrives intact')
+})
+
+test('timeout closes the connection to a real server on this runtime', async (t) => {
+  const http = typeof Bare !== 'undefined' ? require('bare-http1') : require('http')
+  let closed
+  const closedPromise = new Promise((resolve) => { closed = resolve })
+  const server = http.createServer((req) => req.socket.on('close', closed)) // never answers
+  t.teardown(() => new Promise((resolve) => server.close(resolve)))
+  const baseUrl = await new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => resolve('http://127.0.0.1:' + server.address().port))
+  })
+
+  await rejects(t, new WdkIndexerClient({ baseUrl, timeout: 50 }).health(), WdkIndexerTimeoutError, /timed out/)
+  await closedPromise
+  t.pass('server saw the socket close')
 })
