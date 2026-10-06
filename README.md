@@ -2,9 +2,9 @@
 
 HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether. Access blockchain token transfers and balances across multiple networks including Ethereum, Tron, Polygon, Arbitrum, TON, Bitcoin, and more.
 
-- Works on Node.js (>= 22) and the [Bare](https://github.com/holepunchto/bare) runtime
+- Works on Node.js (>= 22) and the [Bare](https://github.com/holepunchto/bare) runtime (>= 1.27)
 - CommonJS and ESM from one implementation
-- No runtime dependencies on Node. Bare needs `bare-fetch` and `bare-abort-controller` (optional peer dependencies)
+- No runtime dependencies on Node. Bare needs `bare-fetch`, `bare-abort-controller` and `bare-url` (optional peer dependencies)
 - Typed errors and bundled TypeScript definitions
 
 See the [Indexer API documentation](https://docs.wdk.tether.io/tools/indexer-api/).
@@ -22,7 +22,7 @@ npm install @tetherto/wdk-indexer-http
 On Bare, also install the optional peer dependencies:
 
 ```bash
-npm install bare-fetch bare-abort-controller
+npm install bare-fetch bare-abort-controller bare-url
 ```
 
 ## Quick start
@@ -55,7 +55,9 @@ client.getTokenTransfers('tron', 'usdt', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', {
 
 ## Bare runtime
 
-Use the same import on Bare. The package's import maps select `bare-fetch` and `bare-abort-controller` on Bare and the globals on Node. You only need to install the two packages (see [Installation](#installation)).
+Use the same import on Bare. The package's import maps select `bare-fetch`, `bare-abort-controller` and `bare-url` on Bare and the globals on Node. You only need to install the three packages (see [Installation](#installation)).
+
+The client needs Bare 1.27.0 or later. The dependencies of `bare-fetch` set this minimum. An older Bare refuses to load them with an `UNSUPPORTED_ENGINE` error.
 
 ```javascript
 const { WdkIndexerClient } = require('@tetherto/wdk-indexer-http')

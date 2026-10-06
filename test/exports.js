@@ -19,6 +19,12 @@ test('#abort-controller resolves to the runtime AbortController', (t) => {
   else t.is(AbortController, globalThis.AbortController, 'global AbortController on Node')
 })
 
+test('#url resolves to the runtime URLSearchParams', (t) => {
+  const { URLSearchParams } = require('#url')
+  if (typeof Bare !== 'undefined') t.is(URLSearchParams, require('bare-url').URLSearchParams, 'bare-url on Bare')
+  else t.is(URLSearchParams, globalThis.URLSearchParams, 'global URLSearchParams on Node')
+})
+
 const NAMES = [
   'WdkIndexerClient',
   'WdkIndexerError',

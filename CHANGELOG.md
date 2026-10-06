@@ -13,8 +13,8 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you upgrade from 1.0.0-bet
 - Wallet sync endpoints: `registerWallets()`, `listWallets()`, `getWallet()`, `updateWallet()`, `deleteWallet()`, `getWalletTransfers()` and `getTransfers()`. The transfer methods take the filters `blockchain`, `token`, `type`, `from`, `to`, `limit`, `skip` and `sort`.
 - CommonJS and ESM from one file. `require()` and named `import` return the same classes, so `instanceof` works with both.
 - Bare runtime support:
-  - On Bare, the `#fetch` and `#abort-controller` import maps select `bare-fetch` and `bare-abort-controller`. On Node, they select the globals.
-  - Both packages are optional peer dependencies. Install them on Bare with `npm install bare-fetch bare-abort-controller`. Node installs nothing extra.
+  - On Bare, the `#fetch`, `#abort-controller` and `#url` import maps select `bare-fetch`, `bare-abort-controller` and `bare-url`. On Node, they select the globals.
+  - The three packages are optional peer dependencies. Install them on Bare with `npm install bare-fetch bare-abort-controller bare-url`. Node installs nothing extra.
 - Hand-written TypeScript definitions (`index.d.ts`) for every request and response shape. `isApiError()` is a type guard. It is true for any item with a string `error`.
 - Error details:
   - `WdkIndexerApiError` has `status` (the HTTP status), `errorType`, `message` and the parsed `body`.
@@ -46,7 +46,7 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you upgrade from 1.0.0-bet
 - `WdkIndexerApiError.status` is always the HTTP status.
 - `WdkIndexerNetworkError` takes the underlying error as its only argument.
 - `apiKey`, `baseUrl`, `timeout` and `fetchFn` are no longer public properties of the client.
-- The package no longer uses `bare-wdk-runtime`. The `./bare` subpath is an alias of the main entry. Node has no runtime dependencies. `bare-fetch` and `bare-abort-controller` are optional peer dependencies, and only Bare needs them.
+- The package no longer uses `bare-wdk-runtime`. The `./bare` subpath is an alias of the main entry. Node has no runtime dependencies. `bare-fetch`, `bare-abort-controller` and `bare-url` are optional peer dependencies, and only Bare needs them.
 - The package requires Node.js 22 or later (it was 18).
 - The package is no longer `"type": "module"`. The source is CommonJS, and ESM code imports it with named imports.
 

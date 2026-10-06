@@ -23,6 +23,10 @@
     "#fetch": {
       "bare": "bare-fetch",
       "default": "./lib/fetch.js"
+    },
+    "#url": {
+      "bare": "bare-url",
+      "default": "./lib/url.js"
     }
   },
   "files": [
@@ -73,7 +77,8 @@
   },
   "peerDependencies": {
     "bare-abort-controller": "^1.1.2",
-    "bare-fetch": "^3.4.0"
+    "bare-fetch": "^3.4.0",
+    "bare-url": "^2.5.4"
   },
   "peerDependenciesMeta": {
     "bare-abort-controller": {
@@ -81,11 +86,15 @@
     },
     "bare-fetch": {
       "optional": true
+    },
+    "bare-url": {
+      "optional": true
     }
   },
   "devDependencies": {
     "bare-abort-controller": "^1.1.2",
     "bare-fetch": "^3.4.0",
+    "bare-url": "^2.5.4",
     "brittle": "^3.19.1",
     "standard": "^17.1.2"
   },
