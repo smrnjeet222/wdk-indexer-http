@@ -23,7 +23,7 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you upgrade from 1.0.0-bet
   - An empty or non-JSON error body gives the message `HTTP <status> <statusText>`.
 - Client-side checks and encoding:
   - The client checks one thing: authenticated methods need an API key. The server checks everything else.
-  - The client puts path parameters into the URL as given, without encoding. See the README for the edge cases.
+  - The client encodes addresses with `encodeURIComponent()`. It puts the other path parameters into the URL as given, without encoding. See the README for the edge cases.
   - The client sends query options as given, but leaves out keys set to `undefined` or `null`.
   - The client builds the query string with `URLSearchParams`, so a space becomes `+`, not `%20`.
 - Unit tests run on Node and on Bare (`npm test`, `npm run test:bare`). Optional live tests run with `npm run test:integration`.

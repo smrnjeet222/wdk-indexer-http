@@ -271,16 +271,18 @@ The server checks everything else, and rejects a bad value with HTTP 400. The me
 
 ### Path parameters
 
-The client puts `blockchain`, `token`, `address`, `txHash` and `walletId` into the URL as given, without encoding. All formats that the API documents are URL-safe.
+The client encodes `address` with `encodeURIComponent()`. A TON address in standard base64 (`EQCx…Id/sDs`) contains `/` and `+`, and works only when encoded.
 
-These characters change the request URL:
+The client puts `blockchain`, `token`, `txHash` and `walletId` into the URL as given, without encoding. All formats that the API documents for these values are URL-safe.
+
+In an unencoded value, these characters change the request URL:
 
 - `/` splits the value into two path segments.
 - `?` and `#` end the path. The request can go to a different endpoint.
 - `%` starts an escape sequence.
 - `fetch` drops a full value of `.` or `..` from the path. For `..`, it also drops the segment before it.
 
-Example: a TON address in standard base64 (`EQCx…Id/sDs`) splits at the `/`, and the API returns 404. Use the URL-safe form of TON addresses (`-` and `_`). For other values, encode the value with `encodeURIComponent()` before you call the client.
+If one of these values can contain such characters, encode it with `encodeURIComponent()` before you call the client.
 
 ## Error handling
 

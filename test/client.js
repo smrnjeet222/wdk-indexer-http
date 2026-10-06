@@ -213,8 +213,26 @@ test('timeout defaults to 30000ms', async (t) => {
   t.ok(delays.includes(30000), 'timer armed with 30000ms')
 })
 
-// Path values go into the URL as given (see "Path parameters" in the README).
-test('path values are inserted without encoding', async (t) => {
+// A TON address in standard base64 contains '/' and '+'.
+test('addresses are URI-encoded', async (t) => {
+  const fetch = mockFetch()
+  const client = new WdkIndexerClient({ apiKey: KEY, fetch })
+  const address = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id/sDs+'
+  await client.getTokenBalance('ton', 'usdt', address)
+  await client.getTokenTransfers('ton', 'usdt', address)
+  t.is(fetch.calls[0].url, BASE + '/ton/usdt/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id%2FsDs%2B/token-balances')
+  t.is(fetch.calls[1].url, BASE + '/ton/usdt/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id%2FsDs%2B/token-transfers')
+})
+
+// Every method is async, so a throw while building the path becomes a rejection.
+test('a malformed address rejects instead of throwing', async (t) => {
+  const p = new WdkIndexerClient({ apiKey: KEY, fetch: mockFetch() }).getTokenBalance('ton', 'usdt', '\uD800') // lone surrogate
+  t.ok(p instanceof Promise, 'returns a promise')
+  await t.exception(p, URIError)
+})
+
+// Other path values go into the URL as given (see "Path parameters" in the README).
+test('non-address path values are inserted without encoding', async (t) => {
   const fetch = mockFetch()
   const client = new WdkIndexerClient({ apiKey: KEY, fetch })
   await client.getWallet('a/b')
