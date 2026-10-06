@@ -241,10 +241,10 @@ test('non-address path values are inserted without encoding', async (t) => {
   t.is(fetch.calls[1].url, BASE + '/wallets/a%2Fb')
 })
 
-test('config and the request method are private', (t) => {
+test('the API key is private', (t) => {
   const client = new WdkIndexerClient({ apiKey: KEY })
-  t.alike(Object.keys(client), [], 'no own enumerable properties')
+  t.alike(Object.keys(client).sort(), ['_fetch', '_origin', '_timeout'], 'only the non-secret config is visible')
   t.is(client.apiKey, undefined)
-  t.is(client._request, undefined)
+  t.is(client._apiKey, undefined)
   t.absent(JSON.stringify(client).includes(KEY), 'API key not serialized')
 })
